@@ -1,0 +1,243 @@
+<resources>
+    <string name="app_name">MediMind</string>
+
+    <!-- Navigation -->
+    <string name="home">Home</string>
+    <string name="scan">Scan</string>
+    <string name="ai_assist">AI Assist</string>
+    <string name="report">Report</string>
+    <string name="community">Community</string>
+    <string name="settings">Settings</string>
+
+    <!-- Login -->
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="forgot_password">Forgot Password?</string>
+    <string name="or_text">OR</string>
+    <string name="dont_have_account">Don\'t have an account?</string>
+    <string name="create_account">Create Account</string>
+    <string name="login">LOGIN</string>
+    <string name="subtitle_login">Your personal health companion</string>
+    <string name="sign_in_header">Sign In</string>
+    <string name="welcome_back_text">Welcome back! Enter your credentials to continue.</string>
+    <string name="dont_have_account_inline">Don\'t have an account? </string>
+    <string name="enter_email_hint">Enter your email</string>
+    <string name="enter_password_hint">Enter your password</string>
+
+    <!-- Register -->
+    <string name="personal_information">Personal Information</string>
+    <string name="security_banner_text">Your health data is encrypted and secure</string>
+    <string name="already_have_account_inline">Already have an account? </string>
+    <string name="sign_in">Sign In</string>
+    <string name="full_name">Full Name</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="agree_terms">I agree to Terms &amp; Privacy</string>
+    <string name="create">CREATE</string>
+
+    <!-- Home -->
+    <string name="todays_plan">Today\'s Plan</string>
+    <string name="yesterdays_plan">Yesterday\'s Plan</string>
+    <string name="tomorrows_plan">Tomorrow\'s Plan</string>
+    <string name="date_plan_format">%s\'s Plan</string>
+    <string name="back_to_today">Back to Today</string>
+    <string name="notification_bar">Notification bar</string>
+    <string name="take_now">Take Now</string>
+    <string name="upcoming">Upcoming</string>
+    <string name="add_medication">Add Medication</string>
+    <string name="no_medications">No medications scheduled for today.</string>
+    <string name="manage_medications_subtitle_format">%d active medications</string>
+    <string name="online_ready">Online - Ready to help</string>
+    <string name="consult_doctor">Consult Doctor</string>
+
+    <!-- Add Medication Dialog -->
+    <string name="scan_medication">Scan medication</string>
+    <string name="medicine_name">Medicine Name</string>
+    <string name="dosages">Dosages</string>
+    <string name="frequency">Frequency</string>
+    <string name="time_s">Time(s)</string>
+    <string name="days_of_week">Days of Week</string>
+    <string name="meal_instructions">Meal Instructions</string>
+    <string name="add">ADD</string>
+    <string name="upload_photo">Upload</string>
+
+    <!-- Scan -->
+    <string name="match_badge_format">%d%% Match</string>
+    <string name="scan_medication_title">Scan Medication</string>
+    <string name="align_medicine">Align medicine with the frame</string>
+    <string name="retake">Retake</string>
+    <string name="add_schedule">Add Schedule</string>
+    <string name="ask_ai">Ask AI</string>
+    <string name="flashlight">Flashlight</string>
+    <string name="gallery">Gallery</string>
+    <string name="analyzing_medication">Analyzing medication…</string>
+    <string name="camera_permission_required">Camera permission is required to scan medications</string>
+    <string name="change_profile_photo">Change Profile Photo</string>
+    <string name="take_photo">Take Photo</string>
+    <string name="choose_from_gallery">Choose from Gallery</string>
+    <string name="profile_photo">Profile Photo</string>
+    <string name="camera_permission_needed">Camera permission is needed to take photos</string>
+
+    <!-- AI Assistant -->
+    <string name="medimind_ai_assistant">MediMind AI Assistant</string>
+    <string name="type_or_ask">Type or ask&#8230;</string>
+
+    <!-- Community -->
+    <string name="search_members_hint">Search members...</string>
+    <string name="friends_count_format">Friends (%d)</string>
+    <string name="community_subtitle">Manage medication schedules for your family members.</string>
+    <string name="all_taken">All Taken</string>
+    <string name="pending_format">%d Pending</string>
+    <string name="add_member">Add Member</string>
+    <string name="me_label">Me</string>
+
+    <!-- Add Member Dialog -->
+    <string name="add_member_title">ADD MEMBER</string>
+    <string name="member_id">ID</string>
+    <string name="messages_optional">MESSAGES (OPTIONAL)</string>
+    <string name="send_request">SEND REQUEST</string>
+
+    <!-- Friend Requests / Notifications -->
+    <string name="community_notifications">Community Notifications</string>
+    <string name="check_message">Check Message</string>
+    <string name="accept">Accept</string>
+    <string name="ignore">Ignore</string>
+    <string name="close">Close</string>
+
+    <!-- Community Detail -->
+    <string name="member_medications">%s\'s Medications</string>
+    <string name="no_medications_today">No medications scheduled for today</string>
+    <string name="taken_count_format">%d Taken</string>
+    <string name="pending_count_format">%d Pending</string>
+    <string name="missed_count_format">%d Missed</string>
+    <string name="request_sent">Friend request sent!</string>
+    <string name="user_not_found">User not found with this ID</string>
+    <string name="already_member">This user is already in your community</string>
+    <string name="cannot_add_self">You cannot add yourself</string>
+    <string name="request_already_sent">A request has already been sent to this user</string>
+    <string name="request_accepted">Request accepted!</string>
+    <string name="request_ignored">Request ignored</string>
+    <string name="new_friend_request">%s wants to join your community</string>
+    <string name="loading_members">Loading community members…</string>
+    <string name="no_notifications">No notifications</string>
+    <string name="status_taken">Taken</string>
+    <string name="status_pending">Pending</string>
+    <string name="status_missed">Missed</string>
+
+    <!-- Health Report -->
+    <string name="adherence_overview">Adherence Overview</string>
+    <string name="total_scheduled">Total Scheduled</string>
+    <string name="total_scheduled_format">Total Scheduled: %d</string>
+    <string name="medications_by_adherence">Medications by Adherence</string>
+    <string name="my_health_report">My Health Report</string>
+    <string name="export_text">Export</string>
+    <string name="medication_adherence">Medication Adherence</string>
+    <string name="taken_on_time">Taken On Time</string>
+    <string name="missed">Missed</string>
+    <string name="skipped">Skipped</string>
+    <string name="taken_label">Taken</string>
+    <string name="medications_past_7_days">Medications in Past 7 days</string>
+    <string name="medicine_taken">Medicine Taken</string>
+    <string name="days_7">7 Days</string>
+    <string name="days_30">30 Days</string>
+    <string name="all">All</string>
+    <string name="custom">Custom</string>
+    <string name="filter_all_medications">Filter: All Medications</string>
+    <string name="filter_medications_format">Filter: %d of %d Medications</string>
+    <string name="filter_by_medication">Filter by Medication</string>
+    <string name="chip_more_format">+%d more</string>
+    <string name="no_adherence_data">No adherence data yet</string>
+    <string name="select_date_range">Select Date Range</string>
+    <string name="export_settings">Export Settings</string>
+    <string name="date_range">Date Range</string>
+    <string name="medication_filter">Medication Filter</string>
+    <string name="medications_in_range">Medications — %s</string>
+    <string name="select_all">Select All</string>
+    <string name="deselect_all">Deselect All</string>
+    <string name="share_report">Share Report</string>
+    <string name="no_app_to_share">No app available to share</string>
+
+    <!-- Settings -->
+    <string name="gender">Gender</string>
+    <string name="date_of_birth">Date of Birth</string>
+    <string name="weight">Weight</string>
+    <string name="blood_type">Blood Type</string>
+    <string name="allergies">Allergies</string>
+    <string name="logout">Logout</string>
+    <string name="confirm_logout">Are you sure you want to logout?</string>
+    <string name="confirm_logout_title">Logout</string>
+    <string name="edit_name">Edit Name</string>
+    <string name="edit_email">Edit Email</string>
+    <string name="edit_gender">Edit Gender</string>
+    <string name="edit_dob">Edit Date of Birth</string>
+    <string name="edit_weight">Edit Weight</string>
+    <string name="edit_blood_type">Edit Blood Type</string>
+    <string name="edit_allergies">Edit Allergies</string>
+    <string name="id_copied">ID copied to clipboard</string>
+    <string name="profile_updated">Profile updated</string>
+    <string name="loading_profile">Loading profile…</string>
+    <string name="not_set">Not set</string>
+    <string name="weight_kg_format">%s KG</string>
+    <string name="id_format">ID: %s</string>
+
+    <!-- Registration Health Fields -->
+    <string name="select_gender">Select Gender</string>
+    <string name="select_blood_type">Select Blood Type (Optional)</string>
+    <string name="weight_optional">Weight in KG (Optional)</string>
+    <string name="allergies_optional">Allergies (Optional)</string>
+    <string name="gender_required">Gender is required</string>
+    <string name="dob_required">Date of birth is required</string>
+    <string name="tap_to_select_dob">Tap to select date of birth</string>
+
+    <!-- Forgot Password -->
+    <string name="forgot_password_title">Reset Password</string>
+    <string name="forgot_password_message">Enter your email address to receive a password reset link.</string>
+    <string name="reset_email_sent">Password reset email sent. Check your inbox.</string>
+    <string name="send">Send</string>
+
+    <!-- Auth Messages -->
+    <string name="registration_failed">Registration failed: %s</string>
+    <string name="login_failed">Login failed: %s</string>
+    <string name="creating_account">Creating account…</string>
+    <string name="logging_in">Logging in…</string>
+
+    <string-array name="gender_array">
+        <item>Male</item>
+        <item>Female</item>
+        <item>Other</item>
+    </string-array>
+
+    <string-array name="blood_type_array">
+        <item>A+</item>
+        <item>A-</item>
+        <item>B+</item>
+        <item>B-</item>
+        <item>AB+</item>
+        <item>AB-</item>
+        <item>O+</item>
+        <item>O-</item>
+    </string-array>
+
+    <!-- Manage Medications -->
+    <string name="manage_medication">Manage Medication</string>
+    <string name="manage_medications">Manage Medications</string>
+    <string name="edit_medication">Edit Medication</string>
+    <string name="delete_medication">Delete Medication</string>
+    <string name="save_changes">SAVE</string>
+    <string name="confirm_delete">Are you sure you want to delete this medication? This action cannot be undone.</string>
+    <string name="confirm_delete_title">Delete Medication</string>
+    <string name="no_medications_added">No medications added yet.</string>
+
+    <string-array name="meal_instructions_array">
+        <item>Before Meal</item>
+        <item>During Meal</item>
+        <item>After Meal</item>
+        <item>Before Sleep</item>
+        <item>As Needed</item>
+    </string-array>
+
+    <!-- General -->
+    <string name="medications">Medications</string>
+    <string name="reports">Reports</string>
+    <string name="profile">Profile</string>
+    <string name="clear_chat">Clear Chat</string>
+</resources>

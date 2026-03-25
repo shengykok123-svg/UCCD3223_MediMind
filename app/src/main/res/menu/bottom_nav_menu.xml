@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/homeFragment"
+        android:icon="@drawable/ic_home"
+        android:title="@string/home" />
+
+    <item
+        android:id="@+id/scanFragment"
+        android:icon="@drawable/ic_scan"
+        android:title="@string/scan" />
+
+    <item
+        android:id="@+id/aiAssistantFragment"
+        android:icon="@drawable/ic_ai_assist"
+        android:title="@string/ai_assist" />
+
+    <item
+        android:id="@+id/reportFragment"
+        android:icon="@drawable/ic_report"
+        android:title="@string/report" />
+
+    <item
+        android:id="@+id/communityFragment"
+        android:icon="@drawable/ic_community"
+        android:title="@string/community" />
+
+</menu>

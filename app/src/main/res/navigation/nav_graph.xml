@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/homeFragment">
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="my.utar.uccd3223.medimind.presentation.home.HomeFragment"
+        android:label="@string/home"
+        tools:layout="@layout/fragment_home">
+        <action
+            android:id="@+id/action_home_to_settings"
+            app:destination="@id/settingsFragment" />
+        <action
+            android:id="@+id/action_home_to_manage"
+            app:destination="@id/manageMedicationsFragment" />
+        <action
+            android:id="@+id/action_home_to_ai"
+            app:destination="@id/aiAssistantFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/scanFragment"
+        android:name="my.utar.uccd3223.medimind.presentation.scan.ScanFragment"
+        android:label="@string/scan"
+        tools:layout="@layout/fragment_scan">
+        <action
+            android:id="@+id/action_scan_to_manage"
+            app:destination="@id/manageMedicationsFragment" />
+        <action
+            android:id="@+id/action_scan_to_ai"
+            app:destination="@id/aiAssistantFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/aiAssistantFragment"
+        android:name="my.utar.uccd3223.medimind.presentation.ai.AiAssistantFragment"
+        android:label="@string/ai_assist"
+        tools:layout="@layout/fragment_ai_assistant">
+        <argument
+            android:name="medicationQuery"
+            app:argType="string"
+            android:defaultValue="" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/reportFragment"
+        android:name="my.utar.uccd3223.medimind.presentation.report.ReportFragment"
+        android:label="@string/report"
+        tools:layout="@layout/fragment_report" />
+
+    <fragment
+        android:id="@+id/communityFragment"
+        android:name="my.utar.uccd3223.medimind.presentation.community.CommunityFragment"
+        android:label="@string/community"
+        tools:layout="@layout/fragment_community" />
+
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="my.utar.uccd3223.medimind.presentation.settings.SettingsFragment"
+        android:label="@string/settings"
+        tools:layout="@layout/fragment_settings" />
+
+    <fragment
+        android:id="@+id/manageMedicationsFragment"
+        android:name="my.utar.uccd3223.medimind.presentation.manage.ManageMedicationsFragment"
+        android:label="@string/manage_medications"
+        tools:layout="@layout/fragment_manage_medications">
+        <action
+            android:id="@+id/action_manage_to_scan"
+            app:destination="@id/scanFragment" />
+    </fragment>
+
+</navigation>
