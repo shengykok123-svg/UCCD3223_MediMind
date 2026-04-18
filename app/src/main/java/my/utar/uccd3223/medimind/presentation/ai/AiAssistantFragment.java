@@ -119,7 +119,12 @@ public class AiAssistantFragment extends Fragment {
         my.utar.uccd3223.medimind.presentation.scan.ScanViewModel scanViewModel =
                 new ViewModelProvider(requireActivity()).get(
                         my.utar.uccd3223.medimind.presentation.scan.ScanViewModel.class);
-        String pendingQuery = scanViewModel.consumePendingAiQuery();
+        String pendingQuery = viewModel.consumePendingQuery();
+        if (pendingQuery != null && !pendingQuery.isEmpty()) {
+            viewModel.sendMessage(pendingQuery);
+        } else {
+            pendingQuery = scanViewModel.consumePendingAiQuery();
+        }
         if (pendingQuery != null && !pendingQuery.isEmpty()) {
             viewModel.sendMessage(pendingQuery);
         } else if (getArguments() != null) {

@@ -70,6 +70,10 @@ public class CommunityFragment extends Fragment {
         setupRecyclerView();
         setupSearch(view);
         setupNotificationBadge();
+        View emptyAddButton = view.findViewById(R.id.btn_empty_add_member);
+        if (emptyAddButton != null) {
+            emptyAddButton.setOnClickListener(v -> showAddMemberDialog());
+        }
         observeViewModel();
 
         // Initial refresh
@@ -121,9 +125,11 @@ public class CommunityFragment extends Fragment {
         viewModel.getMembers().observe(getViewLifecycleOwner(), members -> {
             if (members != null) {
                 memberAdapter.setMembers(members);
-                // Subtract 1 for the "Add" card
-                int friendCount = Math.max(0, members.size() - 1);
-                textFriendsCount.setText(getString(R.string.friends_count_format, friendCount));
+                textFriendsCount.setText(getString(R.string.friends_count_format, members.size()));
+                View emptyState = requireView().findViewById(R.id.empty_state);
+                recyclerMembers.setVisibility(members.isEmpty() ? View.GONE : View.VISIBLE);
+                emptyState.setVisibility(members.isEmpty() ? View.VISIBLE : View.GONE);
+                animateCommunityState(members.isEmpty() ? emptyState : recyclerMembers);
             }
         });
 
@@ -145,6 +151,7 @@ public class CommunityFragment extends Fragment {
         viewModel.getToastMessage().observe(getViewLifecycleOwner(), msg -> {
             if (msg != null && !msg.isEmpty()) {
                 Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show();
+                viewModel.clearToastMessage();
             }
         });
     }
@@ -290,7 +297,7 @@ public class CommunityFragment extends Fragment {
                     ? member.getCustomTitle().trim()
                     : (member.getName() != null ? member.getName() : "");
             textCurrentNickname.setText(nickname);
-            btnEditTitle.setOnClickListener(v -> showEditMemberTitleDialog(member));
+            btnEditTitle.setOnClickListener(v -> showEditMemberTitleDialog(member, textCurrentNickname, textTitle));
         }
 
         final ListenerRegistration medicationListener = viewModel.observeMemberMedications(
@@ -333,24 +340,59 @@ public class CommunityFragment extends Fragment {
         dialog.show();
     }
 
-    private void showEditMemberTitleDialog(CommunityMember member) {
-        EditText input = new EditText(requireContext());
-        input.setHint("Custom title");
-        input.setText(member.getCustomTitle() != null ? member.getCustomTitle() : "");
+    private void showEditMemberTitleDialog(CommunityMember member, TextView textCurrentNickname, TextView textTitle) {
+        Dialog dialog = new Dialog(requireContext());
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_edit_info);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            dialog.getWindow().setLayout(
+                    (int) (getResources().getDisplayMetrics().widthPixels * 0.92f),
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
 
-        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
-                .setTitle("Edit member title")
-                .setView(input)
-                .setPositiveButton("Save", (dialog, which) ->
-                        viewModel.updateMemberCustomTitle(member.getUid(), input.getText().toString()))
-                .setNegativeButton("Cancel", null)
-                .show();
+        TextView dialogTitle = dialog.findViewById(R.id.text_title);
+        TextView dialogSubtitle = dialog.findViewById(R.id.text_subtitle);
+        EditText input = dialog.findViewById(R.id.input_value);
+        Button btnCancel = dialog.findViewById(R.id.btn_cancel);
+        Button btnSave = dialog.findViewById(R.id.btn_save);
+
+        dialogTitle.setText(R.string.edit_member_title);
+        dialogSubtitle.setText(R.string.edit_dialog_subtitle_nickname);
+        input.setHint(R.string.edit_dialog_hint_nickname);
+        input.setText(member.getCustomTitle() != null ? member.getCustomTitle() : "");
+        input.setSelection(input.getText() != null ? input.getText().length() : 0);
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+        btnSave.setOnClickListener(v -> {
+            String updatedTitle = input.getText() != null ? input.getText().toString().trim() : "";
+            member.setCustomTitle(updatedTitle);
+            String displayName = !updatedTitle.isEmpty()
+                    ? updatedTitle
+                    : (member.getName() != null ? member.getName() : "");
+            textCurrentNickname.setText(displayName);
+            textTitle.setText(getString(R.string.member_medications, displayName));
+            viewModel.updateMemberCustomTitle(member.getUid(), updatedTitle);
+            dialog.dismiss();
+        });
+
+        dialog.show();
     }
 
     @Override
     public void onResume() {
         super.onResume();
         viewModel.refreshCommunityData();
+    }
+
+    private void animateCommunityState(View target) {
+        target.setAlpha(0f);
+        target.setTranslationY(20f);
+        target.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setDuration(220)
+                .start();
     }
 
     // ─── Inner Adapter for Medication Detail ─────────────────────

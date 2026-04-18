@@ -20,11 +20,17 @@
     <!-- Status Colors -->
     <color name="success">#43A047</color>
     <color name="success_light">#E8F5E9</color>
+    <color name="success_surface">#F2FBF5</color>
     <color name="warning">#FFB300</color>
     <color name="warning_light">#FFF8E1</color>
+    <color name="warning_surface">#FFF9EC</color>
     <color name="error">#E53935</color>
     <color name="error_pale">#E57373</color>
     <color name="error_light">#FFEBEE</color>
+    <color name="error_surface">#FFF4F3</color>
+    <color name="info_surface">#EEF7F6</color>
+    <color name="surface_elevated">#FCFCFA</color>
+    <color name="progress_track">#E7ECEA</color>
 
     <!-- Text Colors -->
     <color name="text_primary">#212121</color>

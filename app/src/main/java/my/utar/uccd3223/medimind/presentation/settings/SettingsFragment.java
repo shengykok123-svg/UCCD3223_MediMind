@@ -23,6 +23,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -30,7 +32,6 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
@@ -270,17 +271,12 @@ public class SettingsFragment extends Fragment {
 
     private void showEditTextDialog(String title, String field, String currentValue) {
         if (!isAdded()) return;
-        EditText input = new EditText(requireContext());
-        input.setText(currentValue.equals(getString(R.string.not_set)) ? "" : currentValue);
-        input.setInputType(InputType.TYPE_CLASS_TEXT);
-        int padding = (int) (16 * getResources().getDisplayMetrics().density);
-        input.setPadding(padding, padding, padding, padding);
-
-        new AlertDialog.Builder(requireContext())
-                .setTitle(title)
-                .setView(input)
-                .setPositiveButton(R.string.save_changes, (dialog, which) -> {
-                    String newValue = input.getText().toString().trim();
+        String value = currentValue.equals(getString(R.string.not_set)) ? "" : currentValue;
+        int hintRes = field.equals("name") ? R.string.edit_dialog_hint_name : R.string.edit_dialog_hint_allergies;
+        int subtitleRes = field.equals("name") ? R.string.edit_dialog_subtitle_name : R.string.edit_dialog_subtitle_allergies;
+        showStyledInputDialog(title, getString(subtitleRes), getString(hintRes), value,
+                InputType.TYPE_CLASS_TEXT, input -> {
+                    String newValue = input.trim();
                     updateField(field, newValue, () -> {
                         if (field.equals("name")) {
                             textName.setText(newValue.isEmpty() ? getString(R.string.not_set) : newValue);
@@ -288,25 +284,20 @@ public class SettingsFragment extends Fragment {
                             textAllergies.setText(newValue.isEmpty() ? getString(R.string.not_set) : newValue);
                         }
                     });
-                })
-                .setNegativeButton(android.R.string.cancel, null)
-                .show();
+                });
     }
 
     private void showEditEmailDialog() {
         if (!isAdded()) return;
-        EditText input = new EditText(requireContext());
         String current = textEmail.getText().toString();
-        input.setText(current.equals(getString(R.string.not_set)) ? "" : current);
-        input.setInputType(InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
-        int padding = (int) (16 * getResources().getDisplayMetrics().density);
-        input.setPadding(padding, padding, padding, padding);
-
-        new AlertDialog.Builder(requireContext())
-                .setTitle(R.string.edit_email)
-                .setView(input)
-                .setPositiveButton(R.string.save_changes, (dialog, which) -> {
-                    String newEmail = input.getText().toString().trim();
+        String value = current.equals(getString(R.string.not_set)) ? "" : current;
+        showStyledInputDialog(
+                getString(R.string.edit_email),
+                getString(R.string.edit_dialog_subtitle_email),
+                getString(R.string.edit_dialog_hint_email),
+                value,
+                InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS,
+                newEmail -> {
                     if (newEmail.isEmpty()) return;
 
                     FirebaseUser user = firebaseAuth.getCurrentUser();
@@ -326,35 +317,20 @@ public class SettingsFragment extends Fragment {
                                     }
                                 });
                     }
-                })
-                .setNegativeButton(android.R.string.cancel, null)
-                .show();
+                });
     }
 
     private void showEditGenderDialog() {
         if (!isAdded()) return;
         String[] genders = getResources().getStringArray(R.array.gender_array);
         String current = textGender.getText().toString();
-        int checkedItem = -1;
-        for (int i = 0; i < genders.length; i++) {
-            if (genders[i].equals(current)) {
-                checkedItem = i;
-                break;
-            }
-        }
-
-        new AlertDialog.Builder(requireContext())
-                .setTitle(R.string.edit_gender)
-                .setSingleChoiceItems(genders, checkedItem, null)
-                .setPositiveButton(R.string.save_changes, (dialog, which) -> {
-                    int selected = ((AlertDialog) dialog).getListView().getCheckedItemPosition();
-                    if (selected >= 0) {
-                        String newGender = genders[selected];
-                        updateField("gender", newGender, () -> textGender.setText(newGender));
-                    }
-                })
-                .setNegativeButton(android.R.string.cancel, null)
-                .show();
+        showStyledOptionDialog(
+                getString(R.string.edit_gender),
+                getString(R.string.edit_dialog_subtitle_gender),
+                genders,
+                current,
+                newGender -> updateField("gender", newGender, () -> textGender.setText(newGender))
+        );
     }
 
     private void showEditDobDialog() {
@@ -387,49 +363,116 @@ public class SettingsFragment extends Fragment {
 
     private void showEditWeightDialog() {
         if (!isAdded()) return;
-        EditText input = new EditText(requireContext());
         String current = textWeight.getText().toString().replace(" KG", "");
-        input.setText(current.equals(getString(R.string.not_set)) ? "" : current);
-        input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-        int padding = (int) (16 * getResources().getDisplayMetrics().density);
-        input.setPadding(padding, padding, padding, padding);
-
-        new AlertDialog.Builder(requireContext())
-                .setTitle(R.string.edit_weight)
-                .setView(input)
-                .setPositiveButton(R.string.save_changes, (dialog, which) -> {
-                    String newWeight = input.getText().toString().trim();
+        String value = current.equals(getString(R.string.not_set)) ? "" : current;
+        showStyledInputDialog(
+                getString(R.string.edit_weight),
+                getString(R.string.edit_dialog_subtitle_weight),
+                getString(R.string.edit_dialog_hint_weight),
+                value,
+                InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL,
+                newWeight -> {
                     updateField("weight", newWeight, () ->
                             textWeight.setText(newWeight.isEmpty() ? getString(R.string.not_set) : getString(R.string.weight_kg_format, newWeight)));
-                })
-                .setNegativeButton(android.R.string.cancel, null)
-                .show();
+                });
     }
 
     private void showEditBloodTypeDialog() {
         if (!isAdded()) return;
         String[] bloodTypes = getResources().getStringArray(R.array.blood_type_array);
         String current = textBloodType.getText().toString();
-        int checkedItem = -1;
-        for (int i = 0; i < bloodTypes.length; i++) {
-            if (bloodTypes[i].equals(current)) {
-                checkedItem = i;
-                break;
+        showStyledOptionDialog(
+                getString(R.string.edit_blood_type),
+                getString(R.string.edit_dialog_subtitle_blood_type),
+                bloodTypes,
+                current,
+                newBloodType -> updateField("bloodType", newBloodType, () -> textBloodType.setText(newBloodType))
+        );
+    }
+
+    private void showStyledInputDialog(String title, String subtitle, String hint, String currentValue,
+                                       int inputType, OnValueSaved onSave) {
+        Dialog dialog = new Dialog(requireContext());
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_edit_info);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            dialog.getWindow().setLayout(
+                    (int) (getResources().getDisplayMetrics().widthPixels * 0.92f),
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+
+        TextView textTitle = dialog.findViewById(R.id.text_title);
+        TextView textSubtitle = dialog.findViewById(R.id.text_subtitle);
+        EditText inputValue = dialog.findViewById(R.id.input_value);
+        Button btnCancel = dialog.findViewById(R.id.btn_cancel);
+        Button btnSave = dialog.findViewById(R.id.btn_save);
+
+        textTitle.setText(title);
+        textSubtitle.setText(subtitle);
+        inputValue.setHint(hint);
+        inputValue.setText(currentValue);
+        inputValue.setInputType(inputType);
+        inputValue.setSelection(inputValue.getText() != null ? inputValue.getText().length() : 0);
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+        btnSave.setOnClickListener(v -> {
+            onSave.onSave(inputValue.getText() != null ? inputValue.getText().toString() : "");
+            dialog.dismiss();
+        });
+
+        dialog.show();
+    }
+
+    private void showStyledOptionDialog(String title, String subtitle, String[] options,
+                                        String currentValue, OnValueSaved onSave) {
+        Dialog dialog = new Dialog(requireContext());
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_option_picker);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            dialog.getWindow().setLayout(
+                    (int) (getResources().getDisplayMetrics().widthPixels * 0.92f),
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+
+        TextView textTitle = dialog.findViewById(R.id.text_title);
+        TextView textSubtitle = dialog.findViewById(R.id.text_subtitle);
+        RadioGroup radioGroup = dialog.findViewById(R.id.radio_group_options);
+        Button btnCancel = dialog.findViewById(R.id.btn_cancel);
+        Button btnSave = dialog.findViewById(R.id.btn_save);
+
+        textTitle.setText(title);
+        textSubtitle.setText(subtitle);
+
+        for (String option : options) {
+            RadioButton radioButton = new RadioButton(requireContext());
+            radioButton.setText(option);
+            radioButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary));
+            radioButton.setPadding(0, dpToPx(8), 0, dpToPx(8));
+            radioGroup.addView(radioButton);
+            if (option.equals(currentValue)) {
+                radioButton.setChecked(true);
             }
         }
 
-        new AlertDialog.Builder(requireContext())
-                .setTitle(R.string.edit_blood_type)
-                .setSingleChoiceItems(bloodTypes, checkedItem, null)
-                .setPositiveButton(R.string.save_changes, (dialog, which) -> {
-                    int selected = ((AlertDialog) dialog).getListView().getCheckedItemPosition();
-                    if (selected >= 0) {
-                        String newBloodType = bloodTypes[selected];
-                        updateField("bloodType", newBloodType, () -> textBloodType.setText(newBloodType));
-                    }
-                })
-                .setNegativeButton(android.R.string.cancel, null)
-                .show();
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+        btnSave.setOnClickListener(v -> {
+            int checkedId = radioGroup.getCheckedRadioButtonId();
+            if (checkedId != -1) {
+                RadioButton selected = radioGroup.findViewById(checkedId);
+                if (selected != null) {
+                    onSave.onSave(selected.getText().toString());
+                }
+            }
+            dialog.dismiss();
+        });
+
+        dialog.show();
+    }
+
+    private interface OnValueSaved {
+        void onSave(String value);
     }
 
     private void createRecoveryProfile(String email, String displayName) {
@@ -500,46 +543,71 @@ public class SettingsFragment extends Fragment {
 
     private void showLogoutConfirmation() {
         if (!isAdded()) return;
-        new AlertDialog.Builder(requireContext())
-                .setTitle(R.string.confirm_logout_title)
-                .setMessage(R.string.confirm_logout)
-                .setPositiveButton(R.string.logout, (dialog, which) -> {
-                    // Clear local Room database so next user doesn't see old data
-                    new Thread(() -> {
-                        database.clearAllTables();
-                        if (isAdded()) {
-                            requireActivity().runOnUiThread(() -> {
-                                firebaseAuth.signOut();
-                                navigateToLogin();
-                            });
-                        }
-                    }).start();
-                })
-                .setNegativeButton(android.R.string.cancel, null)
-                .show();
+        Dialog dialog = new Dialog(requireContext());
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_confirmation);
+        configureDialogWindow(dialog);
+
+        ImageView imageIcon = dialog.findViewById(R.id.image_icon);
+        TextView textTitle = dialog.findViewById(R.id.text_title);
+        TextView textMessage = dialog.findViewById(R.id.text_message);
+        Button btnCancel = dialog.findViewById(R.id.btn_cancel);
+        Button btnConfirm = dialog.findViewById(R.id.btn_confirm);
+
+        imageIcon.setImageResource(R.drawable.ic_logout);
+        imageIcon.setImageTintList(android.content.res.ColorStateList.valueOf(
+                ContextCompat.getColor(requireContext(), R.color.accent_dark)));
+        textTitle.setText(R.string.confirm_logout_title);
+        textMessage.setText(R.string.logout_subtitle);
+        btnConfirm.setText(R.string.logout);
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+        btnConfirm.setOnClickListener(v -> {
+            dialog.dismiss();
+            new Thread(() -> {
+                database.clearAllTables();
+                if (isAdded()) {
+                    requireActivity().runOnUiThread(() -> {
+                        firebaseAuth.signOut();
+                        navigateToLogin();
+                    });
+                }
+            }).start();
+        });
+
+        dialog.show();
     }
 
     // ─── Profile Photo Methods ────────────────────────────────────────
 
     private void showPhotoPickerDialog() {
         if (!isAdded()) return;
-        String[] options = {getString(R.string.take_photo), getString(R.string.choose_from_gallery)};
+        Dialog dialog = new Dialog(requireContext());
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_photo_picker);
+        configureDialogWindow(dialog);
 
-        new AlertDialog.Builder(requireContext())
-                .setTitle(R.string.change_profile_photo)
-                .setItems(options, (dialog, which) -> {
-                    if (which == 0) {
-                        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
-                                == PackageManager.PERMISSION_GRANTED) {
-                            takePictureLauncher.launch(null);
-                        } else {
-                            cameraPermissionLauncher.launch(Manifest.permission.CAMERA);
-                        }
-                    } else {
-                        galleryLauncher.launch("image/*");
-                    }
-                })
-                .show();
+        View optionCamera = dialog.findViewById(R.id.option_camera);
+        View optionGallery = dialog.findViewById(R.id.option_gallery);
+        Button btnCancel = dialog.findViewById(R.id.btn_cancel);
+
+        optionCamera.setOnClickListener(v -> {
+            dialog.dismiss();
+            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
+                    == PackageManager.PERMISSION_GRANTED) {
+                takePictureLauncher.launch(null);
+            } else {
+                cameraPermissionLauncher.launch(Manifest.permission.CAMERA);
+            }
+        });
+
+        optionGallery.setOnClickListener(v -> {
+            dialog.dismiss();
+            galleryLauncher.launch("image/*");
+        });
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
     }
 
     private void showEnlargedPhotoDialog() {
@@ -634,6 +702,15 @@ public class SettingsFragment extends Fragment {
 
     private int dpToPx(int dp) {
         return (int) (dp * getResources().getDisplayMetrics().density);
+    }
+
+    private void configureDialogWindow(Dialog dialog) {
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            dialog.getWindow().setLayout(
+                    (int) (getResources().getDisplayMetrics().widthPixels * 0.92f),
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
     }
 
     private Bitmap uriToBitmap(Uri uri) {

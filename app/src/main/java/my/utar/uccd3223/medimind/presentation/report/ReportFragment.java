@@ -1,5 +1,6 @@
 package my.utar.uccd3223.medimind.presentation.report;
 
+import android.app.Dialog;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.Intent;
@@ -8,19 +9,23 @@ import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.TypedValue;
+import android.animation.LayoutTransition;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ListView;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.FileProvider;
 import androidx.core.util.Pair;
 import androidx.fragment.app.Fragment;
@@ -87,6 +92,7 @@ public class ReportFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(ReportViewModel.class);
+        binding.chipContainer.setLayoutTransition(new LayoutTransition());
 
         setupDateRangeToggle();
         setupExportButton();
@@ -189,106 +195,91 @@ public class ReportFragment extends Fragment {
 
     private void showMedicationFilterDialog(boolean isForExport, ExportDialogState exportState) {
         if (currentMedications.isEmpty()) {
-            Toast.makeText(requireContext(), "No medications available", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), R.string.no_medications_available, Toast.LENGTH_SHORT).show();
             return;
         }
 
-        String[] names = new String[currentMedications.size()];
         boolean[] checked;
 
         if (isForExport && exportState != null) {
             checked = new boolean[currentMedications.size()];
             for (int i = 0; i < currentMedications.size(); i++) {
-                names[i] = currentMedications.get(i).getName();
                 checked[i] = exportState.medicationIds.isEmpty()
                         || exportState.medicationIds.contains(currentMedications.get(i).getId());
             }
         } else {
             checked = Arrays.copyOf(currentFilterChecked, currentFilterChecked.length);
-            for (int i = 0; i < currentMedications.size(); i++) {
-                names[i] = currentMedications.get(i).getName();
-            }
         }
 
-        // Build custom title with Select All / Deselect All links
-        LinearLayout headerLayout = new LinearLayout(requireContext());
-        headerLayout.setOrientation(LinearLayout.VERTICAL);
-        int pad = (int) TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP, 16, getResources().getDisplayMetrics());
-        headerLayout.setPadding(pad, pad, pad, 0);
+        Dialog dialog = new Dialog(requireContext());
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_report_filter);
+        configureDialogWindow(dialog, 0.92f);
 
-        TextView titleView = new TextView(requireContext());
-        titleView.setText(R.string.medication_filter);
-        titleView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
-        titleView.setTextColor(getResources().getColor(R.color.text_primary, null));
-        headerLayout.addView(titleView);
+        TextView textTitle = dialog.findViewById(R.id.text_title);
+        TextView textSubtitle = dialog.findViewById(R.id.text_subtitle);
+        TextView textSelectionHint = dialog.findViewById(R.id.text_selection_hint);
+        TextView textSelectAll = dialog.findViewById(R.id.text_select_all);
+        TextView textDeselectAll = dialog.findViewById(R.id.text_deselect_all);
+        LinearLayout optionsContainer = dialog.findViewById(R.id.options_container);
+        Button btnCancel = dialog.findViewById(R.id.btn_cancel);
+        Button btnApply = dialog.findViewById(R.id.btn_apply);
 
-        LinearLayout linkRow = new LinearLayout(requireContext());
-        linkRow.setOrientation(LinearLayout.HORIZONTAL);
-        int topMargin = (int) TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP, 8, getResources().getDisplayMetrics());
-        LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        rowParams.topMargin = topMargin;
-        linkRow.setLayoutParams(rowParams);
+        textTitle.setText(R.string.medication_filter);
+        textSubtitle.setText(R.string.report_filter_subtitle);
+        textSelectionHint.setText(R.string.report_filter_hint);
 
-        TextView selectAll = new TextView(requireContext());
-        selectAll.setText(R.string.select_all);
-        selectAll.setTextColor(getResources().getColor(R.color.primary, null));
-        selectAll.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
-        selectAll.setPadding(0, 0, pad, 0);
-        linkRow.addView(selectAll);
+        List<CheckBox> checkBoxes = new ArrayList<>();
+        for (int i = 0; i < currentMedications.size(); i++) {
+            Medication medication = currentMedications.get(i);
+            CheckBox checkBox = new CheckBox(requireContext());
+            checkBox.setText(medication.getName());
+            checkBox.setTextColor(getResources().getColor(R.color.text_primary, null));
+            checkBox.setButtonTintList(android.content.res.ColorStateList.valueOf(
+                    getResources().getColor(R.color.primary, null)));
+            checkBox.setPadding(dpToPx(4), dpToPx(10), dpToPx(4), dpToPx(10));
+            checkBox.setChecked(checked[i]);
+            final int index = i;
+            checkBox.setOnCheckedChangeListener((buttonView, isChecked) -> checked[index] = isChecked);
+            optionsContainer.addView(checkBox);
+            checkBoxes.add(checkBox);
+        }
 
-        TextView deselectAll = new TextView(requireContext());
-        deselectAll.setText(R.string.deselect_all);
-        deselectAll.setTextColor(getResources().getColor(R.color.primary, null));
-        deselectAll.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
-        linkRow.addView(deselectAll);
-
-        headerLayout.addView(linkRow);
-
-        AlertDialog dialog = new AlertDialog.Builder(requireContext())
-                .setCustomTitle(headerLayout)
-                .setMultiChoiceItems(names, checked, (d, which, isChecked) -> {
-                    checked[which] = isChecked;
-                })
-                .setPositiveButton(android.R.string.ok, (d, which) -> {
-                    Set<Long> selected = new HashSet<>();
-                    boolean allSelected = true;
-                    for (int i = 0; i < checked.length; i++) {
-                        if (checked[i]) {
-                            selected.add(currentMedications.get(i).getId());
-                        } else {
-                            allSelected = false;
-                        }
-                    }
-                    // If all selected, use empty set to mean "all"
-                    if (allSelected) selected.clear();
-
-                    if (isForExport && exportState != null) {
-                        exportState.medicationIds = selected;
-                        doExport(exportState);
-                    } else {
-                        viewModel.setMedicationFilter(selected);
-                        currentFilterChecked = checked;
-                    }
-                })
-                .setNegativeButton(android.R.string.cancel, null)
-                .create();
-
-        selectAll.setOnClickListener(v -> {
-            ListView listView = dialog.getListView();
-            for (int i = 0; i < checked.length; i++) {
-                checked[i] = true;
-                listView.setItemChecked(i, true);
+        textSelectAll.setOnClickListener(v -> {
+            for (CheckBox checkBox : checkBoxes) {
+                checkBox.setChecked(true);
             }
         });
 
-        deselectAll.setOnClickListener(v -> {
-            ListView listView = dialog.getListView();
+        textDeselectAll.setOnClickListener(v -> {
+            for (CheckBox checkBox : checkBoxes) {
+                checkBox.setChecked(false);
+            }
+        });
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+        btnApply.setOnClickListener(v -> {
+            Set<Long> selected = new HashSet<>();
+            boolean allSelected = true;
             for (int i = 0; i < checked.length; i++) {
-                checked[i] = false;
-                listView.setItemChecked(i, false);
+                if (checked[i]) {
+                    selected.add(currentMedications.get(i).getId());
+                } else {
+                    allSelected = false;
+                }
+            }
+            if (allSelected) {
+                selected.clear();
+            }
+
+            if (isForExport && exportState != null) {
+                exportState.medicationIds = selected;
+                dialog.dismiss();
+                doExport(exportState);
+            } else {
+                viewModel.setMedicationFilter(selected);
+                currentFilterChecked = Arrays.copyOf(checked, checked.length);
+                dialog.dismiss();
             }
         });
 
@@ -314,39 +305,67 @@ public class ReportFragment extends Fragment {
         Set<Long> currentFilter = viewModel.getSelectedMedicationIds().getValue();
         state.medicationIds = currentFilter != null ? new HashSet<>(currentFilter) : new HashSet<>();
 
-        // Show export settings dialog
-        String[] rangeOptions = {"7 Days", "30 Days", "All", "Custom"};
-        int currentIdx;
+        Dialog dialog = new Dialog(requireContext());
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_report_export);
+        configureDialogWindow(dialog, 0.92f);
+
+        RadioGroup radioGroup = dialog.findViewById(R.id.radio_group_range);
+        RadioButton radio7Days = dialog.findViewById(R.id.radio_7_days);
+        RadioButton radio30Days = dialog.findViewById(R.id.radio_30_days);
+        RadioButton radioAll = dialog.findViewById(R.id.radio_all);
+        RadioButton radioCustom = dialog.findViewById(R.id.radio_custom);
+        TextView textCurrentState = dialog.findViewById(R.id.text_current_state);
+        Button btnCancel = dialog.findViewById(R.id.btn_cancel);
+        Button btnContinue = dialog.findViewById(R.id.btn_continue);
+
         switch (state.range) {
-            case DAYS_30: currentIdx = 1; break;
-            case ALL: currentIdx = 2; break;
-            case CUSTOM: currentIdx = 3; break;
-            default: currentIdx = 0; break;
+            case DAYS_30:
+                radioGroup.check(R.id.radio_30_days);
+                break;
+            case ALL:
+                radioGroup.check(R.id.radio_all);
+                break;
+            case CUSTOM:
+                radioGroup.check(R.id.radio_custom);
+                break;
+            case DAYS_7:
+            default:
+                radioGroup.check(R.id.radio_7_days);
+                break;
         }
 
-        final int[] selectedIdx = {currentIdx};
+        String rangeLabel = viewModel.getRangeLabelText().getValue();
+        if (rangeLabel == null || rangeLabel.isEmpty()) {
+            rangeLabel = getString(R.string.days_7);
+        }
+        Set<Long> selectedIds = viewModel.getSelectedMedicationIds().getValue();
+        String filterLabel = (selectedIds == null || selectedIds.isEmpty())
+                ? getString(R.string.report_filter_all)
+                : getString(R.string.report_filter_selected, selectedIds.size());
+        textCurrentState.setText(getString(R.string.export_settings_current, rangeLabel, filterLabel));
 
-        new AlertDialog.Builder(requireContext())
-                .setTitle(R.string.export_settings)
-                .setSingleChoiceItems(rangeOptions, currentIdx, (dialog, which) -> {
-                    selectedIdx[0] = which;
-                })
-                .setPositiveButton(R.string.export_text, (dialog, which) -> {
-                    switch (selectedIdx[0]) {
-                        case 0: state.range = ReportViewModel.DateRange.DAYS_7; break;
-                        case 1: state.range = ReportViewModel.DateRange.DAYS_30; break;
-                        case 2: state.range = ReportViewModel.DateRange.ALL; break;
-                        case 3:
-                            state.range = ReportViewModel.DateRange.CUSTOM;
-                            // Show date picker then continue export
-                            showDateRangePicker(true, state);
-                            return;
-                    }
-                    // Show medication filter for export
-                    showMedicationFilterDialog(true, state);
-                })
-                .setNegativeButton(android.R.string.cancel, null)
-                .show();
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+        btnContinue.setOnClickListener(v -> {
+            int checkedId = radioGroup.getCheckedRadioButtonId();
+            if (checkedId == radio30Days.getId()) {
+                state.range = ReportViewModel.DateRange.DAYS_30;
+            } else if (checkedId == radioAll.getId()) {
+                state.range = ReportViewModel.DateRange.ALL;
+            } else if (checkedId == radioCustom.getId()) {
+                state.range = ReportViewModel.DateRange.CUSTOM;
+                dialog.dismiss();
+                showDateRangePicker(true, state);
+                return;
+            } else {
+                state.range = ReportViewModel.DateRange.DAYS_7;
+            }
+
+            dialog.dismiss();
+            showMedicationFilterDialog(true, state);
+        });
+
+        dialog.show();
     }
 
     private void doExport(ExportDialogState state) {
@@ -359,12 +378,14 @@ public class ReportFragment extends Fragment {
         chart.setUsePercentValues(false);
         chart.getDescription().setEnabled(false);
         chart.setDrawHoleEnabled(true);
-        chart.setHoleColor(Color.WHITE);
+        chart.setHoleColor(getResources().getColor(R.color.surface, null));
         chart.setHoleRadius(65f);
         chart.setTransparentCircleRadius(68f);
         chart.setDrawEntryLabels(false);
         chart.getLegend().setEnabled(false);
         chart.setRotationEnabled(false);
+        chart.setHighlightPerTapEnabled(false);
+        chart.setExtraOffsets(12f, 12f, 12f, 12f);
     }
 
     private void observeViewModel() {
@@ -381,12 +402,16 @@ public class ReportFragment extends Fragment {
             binding.pieChart.setCenterText(String.format("%.0f%%", percent));
             binding.pieChart.setCenterTextSize(20f);
             binding.pieChart.setCenterTextColor(getResources().getColor(R.color.primary, null));
+            binding.textContextValue.setText(getString(R.string.report_adherence_value, percent));
+            pulseReportCard();
         });
 
         viewModel.getBarChartData().observe(getViewLifecycleOwner(), this::updateBarChart);
 
         viewModel.getRangeLabelText().observe(getViewLifecycleOwner(), label -> {
             binding.textBarChartTitle.setText(getString(R.string.medications_in_range, label));
+            binding.textContextRange.setText(getString(R.string.report_context_range) + ": " + label);
+            fadeInView(binding.reportContextCard);
         });
 
         viewModel.getAllMedications().observe(getViewLifecycleOwner(), meds -> {
@@ -415,7 +440,29 @@ public class ReportFragment extends Fragment {
         viewModel.getSelectedMedicationIds().observe(getViewLifecycleOwner(), ids -> {
             syncFilterCheckedState();
             populateFilterChips(currentMedications);
+            updateReportContextFilter(ids);
+            fadeInView(binding.reportContextCard);
         });
+    }
+
+    private void updateReportContextFilter(Set<Long> ids) {
+        boolean allSelected = ids == null || ids.isEmpty();
+        String filterText = allSelected
+                ? getString(R.string.report_filter_all)
+                : getString(R.string.report_filter_selected, ids.size());
+        binding.textContextFilter.setText(getString(R.string.report_context_filter) + ": " + filterText);
+    }
+
+    private void pulseReportCard() {
+        binding.reportContextCard.animate().cancel();
+        binding.reportContextCard.setScaleX(0.985f);
+        binding.reportContextCard.setScaleY(0.985f);
+        binding.reportContextCard.animate().scaleX(1f).scaleY(1f).setDuration(180).start();
+    }
+
+    private void fadeInView(View view) {
+        view.setAlpha(0.75f);
+        view.animate().alpha(1f).setDuration(180).start();
     }
 
     private void syncFilterCheckedState() {
@@ -626,6 +673,7 @@ public class ReportFragment extends Fragment {
 
         PieData data = new PieData(dataSet);
         chart.setData(data);
+        chart.animateY(240);
         chart.invalidate();
     }
 
@@ -647,7 +695,9 @@ public class ReportFragment extends Fragment {
 
         BarDataSet dataSet = new BarDataSet(entries, "Medicine Taken");
         dataSet.setColor(getResources().getColor(R.color.chart_bar, null));
-        dataSet.setValueTextSize(12f);
+        dataSet.setValueTextSize(11f);
+        dataSet.setValueTextColor(getResources().getColor(R.color.text_secondary, null));
+        dataSet.setHighLightAlpha(0);
         dataSet.setValueFormatter(new ValueFormatter() {
             @Override
             public String getFormattedValue(float value) {
@@ -663,15 +713,35 @@ public class ReportFragment extends Fragment {
         chart.getLegend().setEnabled(false);
         chart.setFitBars(true);
         chart.setDrawValueAboveBar(true);
+        chart.setDrawGridBackground(false);
+        chart.setDrawBarShadow(false);
+        chart.setPinchZoom(false);
+        chart.setScaleEnabled(false);
+        chart.setDoubleTapToZoomEnabled(false);
+        chart.setExtraOffsets(8f, 8f, 20f, 8f);
 
         XAxis xAxis = chart.getXAxis();
-        xAxis.setValueFormatter(new IndexAxisValueFormatter(labels));
+        xAxis.setValueFormatter(new IndexAxisValueFormatter(labels) {
+            @Override
+            public String getFormattedValue(float value) {
+                int index = Math.round(value);
+                if (index < 0 || index >= labels.size()) return "";
+                String label = labels.get(index);
+                return label.length() > 16 ? label.substring(0, 13) + "..." : label;
+            }
+        });
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setGranularity(1f);
         xAxis.setDrawGridLines(false);
+        xAxis.setTextColor(getResources().getColor(R.color.text_secondary, null));
+        xAxis.setTextSize(11f);
+        xAxis.setAxisLineColor(getResources().getColor(R.color.border_light, null));
 
         chart.getAxisLeft().setAxisMinimum(0f);
         chart.getAxisLeft().setGranularity(1f);
+        chart.getAxisLeft().setTextColor(getResources().getColor(R.color.text_secondary, null));
+        chart.getAxisLeft().setGridColor(getResources().getColor(R.color.border_light, null));
+        chart.getAxisLeft().setAxisLineColor(getResources().getColor(R.color.border_light, null));
         chart.getAxisRight().setEnabled(false);
 
         // Dynamic height: ~50dp per medication + padding
@@ -682,7 +752,17 @@ public class ReportFragment extends Fragment {
         params.height = heightPx;
         chart.setLayoutParams(params);
 
+        chart.animateY(260);
         chart.invalidate();
+    }
+
+    private void configureDialogWindow(Dialog dialog, float widthFraction) {
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            dialog.getWindow().setLayout(
+                    (int) (getResources().getDisplayMetrics().widthPixels * widthFraction),
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
     }
 
     private void launchEmailIntent(File pdfFile) {

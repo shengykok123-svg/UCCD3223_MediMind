@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.app.DatePickerDialog;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -25,9 +26,10 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.navigation.NavOptions;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
+
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -36,6 +38,7 @@ import java.util.Locale;
 
 import my.utar.uccd3223.medimind.R;
 import my.utar.uccd3223.medimind.databinding.FragmentHomeBinding;
+import my.utar.uccd3223.medimind.presentation.ai.AiAssistantViewModel;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -291,16 +294,12 @@ public class HomeFragment extends Fragment {
                             + (item.getInstructions() != null && !item.getInstructions().isEmpty()
                                 ? ", " + item.getInstructions() : "")
                             + ". What are its uses, side effects, and any important precautions?";
-                    Bundle bundle = new Bundle();
-                    bundle.putString("medicationQuery", query);
-                    // Navigate as a top-level destination (same as bottom nav tap)
-                    // so the bottom nav stays in sync and Home remains tappable
-                    NavOptions navOptions = new NavOptions.Builder()
-                            .setLaunchSingleTop(true)
-                            .setPopUpTo(R.id.homeFragment, false)
-                            .build();
-                    Navigation.findNavController(requireView())
-                            .navigate(R.id.aiAssistantFragment, bundle, navOptions);
+                    AiAssistantViewModel aiViewModel =
+                            new ViewModelProvider(requireActivity()).get(AiAssistantViewModel.class);
+                    aiViewModel.setPendingQuery(query);
+                    BottomNavigationView bottomNav =
+                            requireActivity().findViewById(R.id.bottom_navigation);
+                    bottomNav.setSelectedItemId(R.id.aiAssistantFragment);
                 }
         );
 
@@ -313,8 +312,11 @@ public class HomeFragment extends Fragment {
         viewModel.getMedications().observe(getViewLifecycleOwner(), medications -> {
             if (medications != null) {
                 adapter.submitList(medications);
+                updateSummaryCard(medications);
                 binding.emptyView.setVisibility(medications.isEmpty() ? View.VISIBLE : View.GONE);
                 binding.recyclerView.setVisibility(medications.isEmpty() ? View.GONE : View.VISIBLE);
+                animateHomeContentChange(medications.isEmpty() ? binding.emptyView : binding.recyclerView);
+                pulseView(binding.summaryCard);
             }
         });
 
@@ -343,6 +345,7 @@ public class HomeFragment extends Fragment {
                     }
                     binding.notificationBar.setCompoundDrawablesWithIntrinsicBounds(icon, null, null, null);
                 }
+                pulseView(binding.notificationBar);
             }
         });
 
@@ -366,6 +369,47 @@ public class HomeFragment extends Fragment {
                 Toast.makeText(requireContext(), errorMsg, Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void updateSummaryCard(java.util.List<my.utar.uccd3223.medimind.data.local.database.entities.MedicationScheduleItem> medications) {
+        int taken = 0;
+        int pending = 0;
+        int missed = 0;
+        for (my.utar.uccd3223.medimind.data.local.database.entities.MedicationScheduleItem item : medications) {
+            if (item.isTaken()) {
+                taken++;
+            } else if (item.isMissed()) {
+                missed++;
+            } else if (!item.isSkipped()) {
+                pending++;
+            }
+        }
+        binding.textSummaryTakenValue.setText(String.valueOf(taken));
+        binding.textSummaryPendingValue.setText(String.valueOf(pending));
+        binding.textSummaryMissedValue.setText(String.valueOf(missed));
+    }
+
+    private void animateHomeContentChange(View target) {
+        target.setAlpha(0f);
+        target.setTranslationY(18f);
+        target.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setDuration(220)
+                .setInterpolator(new AccelerateDecelerateInterpolator())
+                .start();
+    }
+
+    private void pulseView(View view) {
+        view.animate().cancel();
+        view.setScaleX(0.98f);
+        view.setScaleY(0.98f);
+        view.animate()
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(180)
+                .setInterpolator(new DecelerateInterpolator())
+                .start();
     }
 
     // ─── Buttons ───────────────────────────────────────────────────────

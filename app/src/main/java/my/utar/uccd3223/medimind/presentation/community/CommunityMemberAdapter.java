@@ -4,6 +4,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -108,18 +109,22 @@ public class CommunityMemberAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         private final ImageView imgAvatar;
         private final TextView textRelation;
         private final TextView textName;
+        private final TextView textProgressSummary;
         private final TextView textTakenCount;
         private final TextView textPendingCount;
         private final TextView textMissedCount;
+        private final ProgressBar progressAdherence;
 
         MemberViewHolder(@NonNull View itemView) {
             super(itemView);
             imgAvatar = itemView.findViewById(R.id.img_avatar);
             textRelation = itemView.findViewById(R.id.text_relation);
             textName = itemView.findViewById(R.id.text_name);
+            textProgressSummary = itemView.findViewById(R.id.text_progress_summary);
             textTakenCount = itemView.findViewById(R.id.text_taken_count);
             textPendingCount = itemView.findViewById(R.id.text_pending_count);
             textMissedCount = itemView.findViewById(R.id.text_missed_count);
+            progressAdherence = itemView.findViewById(R.id.progress_adherence);
         }
 
         void bind(CommunityMember member) {
@@ -157,6 +162,12 @@ public class CommunityMemberAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             }
 
             // Adherence counts
+            int total = member.getTotalCount();
+            int taken = member.getTakenCount();
+            int progress = total > 0 ? Math.round((taken * 100f) / total) : 0;
+            progressAdherence.setProgress(progress);
+            textProgressSummary.setText(itemView.getContext().getString(
+                    R.string.member_progress_format, taken, total));
             textTakenCount.setText(itemView.getContext().getString(R.string.taken_count_format, member.getTakenCount()));
             textPendingCount.setText(itemView.getContext().getString(R.string.pending_count_format, member.getPendingCount()));
             textMissedCount.setText(itemView.getContext().getString(R.string.missed_count_format, member.getMissedCount()));

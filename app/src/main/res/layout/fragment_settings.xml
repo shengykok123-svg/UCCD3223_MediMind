@@ -6,7 +6,6 @@
     android:layout_height="match_parent"
     android:background="@color/background">
 
-    <!-- Header -->
     <LinearLayout
         android:id="@+id/header"
         android:layout_width="0dp"
@@ -51,6 +50,7 @@
     <ScrollView
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:clipToPadding="false"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -63,19 +63,27 @@
             android:paddingStart="24dp"
             android:paddingTop="24dp"
             android:paddingEnd="24dp"
-            android:paddingBottom="32dp">
+            android:paddingBottom="40dp">
 
-            <!-- Profile Section -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="@drawable/bg_summary_tinted"
                 android:gravity="center_horizontal"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:padding="24dp">
 
-                <!-- Avatar with Camera Overlay -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_profile_subtitle"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp" />
+
                 <FrameLayout
                     android:layout_width="100dp"
-                    android:layout_height="100dp">
+                    android:layout_height="100dp"
+                    android:layout_marginTop="18dp">
 
                     <ImageView
                         android:id="@+id/img_avatar"
@@ -92,22 +100,30 @@
 
                     <ImageButton
                         android:id="@+id/btn_change_photo"
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
+                        android:layout_width="34dp"
+                        android:layout_height="34dp"
                         android:layout_gravity="bottom|end"
                         android:background="@drawable/bg_timeline_dot_filled"
-                        android:backgroundTint="@color/text_secondary"
+                        android:backgroundTint="@color/primary_dark"
                         android:contentDescription="Change photo"
-                        android:padding="6dp"
+                        android:padding="7dp"
                         android:src="@drawable/ic_camera"
                         app:tint="@color/on_primary" />
                 </FrameLayout>
 
-                <!-- Name with edit icon -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:gravity="center"
+                    android:text="@string/settings_photo_hint"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp" />
+
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="10dp"
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
@@ -116,7 +132,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textColor="@color/text_primary"
-                        android:textSize="20sp"
+                        android:textSize="22sp"
                         android:textStyle="bold"
                         tools:text="Winson" />
 
@@ -131,7 +147,6 @@
                         app:tint="@color/primary" />
                 </LinearLayout>
 
-                <!-- ID with copy icon -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -159,258 +174,287 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginTop="20dp"
-                android:background="@color/divider" />
-
-            <!-- Email Field -->
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:text="@string/email"
-                android:textColor="@color/text_primary"
-                android:textSize="15sp"
+                android:layout_marginTop="24dp"
+                android:text="@string/settings_section_account"
+                android:textColor="@color/primary_dark"
+                android:textSize="14sp"
                 android:textStyle="bold" />
 
-            <RelativeLayout
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="6dp"
-                android:background="@drawable/bg_settings_field"
-                android:paddingStart="16dp"
-                android:paddingEnd="8dp">
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_surface_section"
+                android:orientation="vertical"
+                android:padding="18dp">
 
                 <TextView
-                    android:id="@+id/text_email"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_alignParentStart="true"
-                    android:layout_centerVertical="true"
-                    android:textColor="@color/text_primary"
-                    android:textSize="15sp"
-                    tools:text="abc123456789@yahoo.com" />
+                    android:text="@string/email"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
 
-                <ImageButton
-                    android:id="@+id/btn_edit_email"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Edit email"
-                    android:src="@drawable/ic_edit"
-                    app:tint="@color/primary" />
-            </RelativeLayout>
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="6dp"
+                    android:background="@drawable/bg_settings_field"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="8dp">
 
-            <!-- Gender Field -->
+                    <TextView
+                        android:id="@+id/text_email"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp"
+                        tools:text="abc123456789@yahoo.com" />
+
+                    <ImageButton
+                        android:id="@+id/btn_edit_email"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="Edit email"
+                        android:src="@drawable/ic_edit"
+                        app:tint="@color/primary" />
+                </RelativeLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:text="@string/gender"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="6dp"
+                    android:background="@drawable/bg_settings_field"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="8dp">
+
+                    <TextView
+                        android:id="@+id/text_gender"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp"
+                        tools:text="Male" />
+
+                    <ImageButton
+                        android:id="@+id/btn_edit_gender"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="Edit gender"
+                        android:src="@drawable/ic_edit"
+                        app:tint="@color/primary" />
+                </RelativeLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:text="@string/date_of_birth"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="6dp"
+                    android:background="@drawable/bg_settings_field"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="8dp">
+
+                    <TextView
+                        android:id="@+id/text_dob"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp"
+                        tools:text="10/10/2000" />
+
+                    <ImageButton
+                        android:id="@+id/btn_edit_dob"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="Edit date of birth"
+                        android:src="@drawable/ic_edit"
+                        app:tint="@color/primary" />
+                </RelativeLayout>
+            </LinearLayout>
+
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:text="@string/gender"
-                android:textColor="@color/text_primary"
-                android:textSize="15sp"
+                android:layout_marginTop="22dp"
+                android:text="@string/settings_section_health"
+                android:textColor="@color/primary_dark"
+                android:textSize="14sp"
                 android:textStyle="bold" />
 
-            <RelativeLayout
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="6dp"
-                android:background="@drawable/bg_settings_field"
-                android:paddingStart="16dp"
-                android:paddingEnd="8dp">
-
-                <TextView
-                    android:id="@+id/text_gender"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentStart="true"
-                    android:layout_centerVertical="true"
-                    android:textColor="@color/text_primary"
-                    android:textSize="15sp"
-                    tools:text="Male" />
-
-                <ImageButton
-                    android:id="@+id/btn_edit_gender"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Edit gender"
-                    android:src="@drawable/ic_edit"
-                    app:tint="@color/primary" />
-            </RelativeLayout>
-
-            <!-- Date of Birth Field -->
-            <TextView
-                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:text="@string/date_of_birth"
-                android:textColor="@color/text_primary"
-                android:textSize="15sp"
-                android:textStyle="bold" />
-
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="6dp"
-                android:background="@drawable/bg_settings_field"
-                android:paddingStart="16dp"
-                android:paddingEnd="8dp">
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_surface_section"
+                android:orientation="vertical"
+                android:padding="18dp">
 
                 <TextView
-                    android:id="@+id/text_dob"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_alignParentStart="true"
-                    android:layout_centerVertical="true"
-                    android:textColor="@color/text_primary"
-                    android:textSize="15sp"
-                    tools:text="10/10/2000" />
+                    android:text="@string/weight"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
 
-                <ImageButton
-                    android:id="@+id/btn_edit_dob"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Edit date of birth"
-                    android:src="@drawable/ic_edit"
-                    app:tint="@color/primary" />
-            </RelativeLayout>
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="6dp"
+                    android:background="@drawable/bg_settings_field"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="8dp">
 
-            <!-- Weight Field -->
+                    <TextView
+                        android:id="@+id/text_weight"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp"
+                        tools:text="70 KG" />
+
+                    <ImageButton
+                        android:id="@+id/btn_edit_weight"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="Edit weight"
+                        android:src="@drawable/ic_edit"
+                        app:tint="@color/primary" />
+                </RelativeLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:text="@string/blood_type"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="6dp"
+                    android:background="@drawable/bg_settings_field"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="8dp">
+
+                    <TextView
+                        android:id="@+id/text_blood_type"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp"
+                        tools:text="O+" />
+
+                    <ImageButton
+                        android:id="@+id/btn_edit_blood_type"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="Edit blood type"
+                        android:src="@drawable/ic_edit"
+                        app:tint="@color/primary" />
+                </RelativeLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:text="@string/allergies"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="6dp"
+                    android:background="@drawable/bg_settings_field"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="8dp">
+
+                    <TextView
+                        android:id="@+id/text_allergies"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp"
+                        tools:text="Penicillin, Peanuts" />
+
+                    <ImageButton
+                        android:id="@+id/btn_edit_allergies"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="Edit allergies"
+                        android:src="@drawable/ic_edit"
+                        app:tint="@color/primary" />
+                </RelativeLayout>
+            </LinearLayout>
+
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:text="@string/weight"
-                android:textColor="@color/text_primary"
-                android:textSize="15sp"
-                android:textStyle="bold" />
-
-            <RelativeLayout
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="6dp"
-                android:background="@drawable/bg_settings_field"
-                android:paddingStart="16dp"
-                android:paddingEnd="8dp">
-
-                <TextView
-                    android:id="@+id/text_weight"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentStart="true"
-                    android:layout_centerVertical="true"
-                    android:textColor="@color/text_primary"
-                    android:textSize="15sp"
-                    tools:text="70 KG" />
-
-                <ImageButton
-                    android:id="@+id/btn_edit_weight"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Edit weight"
-                    android:src="@drawable/ic_edit"
-                    app:tint="@color/primary" />
-            </RelativeLayout>
-
-            <!-- Blood Type Field -->
-            <TextView
-                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:text="@string/blood_type"
-                android:textColor="@color/text_primary"
-                android:textSize="15sp"
-                android:textStyle="bold" />
+                android:layout_marginTop="18dp"
+                android:text="@string/settings_logout_hint"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp" />
 
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="6dp"
-                android:background="@drawable/bg_settings_field"
-                android:paddingStart="16dp"
-                android:paddingEnd="8dp">
-
-                <TextView
-                    android:id="@+id/text_blood_type"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentStart="true"
-                    android:layout_centerVertical="true"
-                    android:textColor="@color/text_primary"
-                    android:textSize="15sp"
-                    tools:text="O+" />
-
-                <ImageButton
-                    android:id="@+id/btn_edit_blood_type"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Edit blood type"
-                    android:src="@drawable/ic_edit"
-                    app:tint="@color/primary" />
-            </RelativeLayout>
-
-            <!-- Allergies Field -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:text="@string/allergies"
-                android:textColor="@color/text_primary"
-                android:textSize="15sp"
-                android:textStyle="bold" />
-
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="6dp"
-                android:background="@drawable/bg_settings_field"
-                android:paddingStart="16dp"
-                android:paddingEnd="8dp">
-
-                <TextView
-                    android:id="@+id/text_allergies"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentStart="true"
-                    android:layout_centerVertical="true"
-                    android:textColor="@color/text_primary"
-                    android:textSize="15sp"
-                    tools:text="Penicillin, Peanuts" />
-
-                <ImageButton
-                    android:id="@+id/btn_edit_allergies"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Edit allergies"
-                    android:src="@drawable/ic_edit"
-                    app:tint="@color/primary" />
-            </RelativeLayout>
-
-            <!-- Logout Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_logout"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
-                android:layout_marginTop="32dp"
+                android:layout_marginTop="16dp"
                 android:text="@string/logout"
                 android:textColor="@color/on_primary"
                 android:textSize="16sp"

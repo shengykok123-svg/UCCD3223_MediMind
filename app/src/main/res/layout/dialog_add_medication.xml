@@ -61,6 +61,25 @@
                 app:tint="@color/text_primary" />
         </RelativeLayout>
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_summary_tinted"
+            android:padding="12dp"
+            android:text="@string/form_scan_hint"
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="@string/section_medication_info"
+            android:textColor="@color/primary_dark"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
         <!-- Medicine Name -->
         <TextView
             android:layout_width="wrap_content"
@@ -110,6 +129,15 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
+            android:text="@string/section_schedule"
+            android:textColor="@color/primary_dark"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
             android:text="@string/frequency"
             android:textColor="@color/text_primary"
             android:textSize="15sp"
@@ -175,6 +203,14 @@
             android:textSize="13sp"
             android:textStyle="italic" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="@string/form_frequency_helper"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp" />
+
         <!-- Time(s) -->
         <TextView
             android:layout_width="wrap_content"
@@ -234,6 +270,15 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
+            android:text="@string/section_dates"
+            android:textColor="@color/primary_dark"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
             android:text="Date Range"
             android:textColor="@color/text_primary"
             android:textSize="15sp"
@@ -284,11 +329,28 @@
                 android:textSize="14sp" />
         </LinearLayout>
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="@string/form_dates_helper"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp" />
+
         <!-- Meal Instructions -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
+            android:text="@string/section_supporting_details"
+            android:textColor="@color/primary_dark"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
             android:text="@string/meal_instructions"
             android:textColor="@color/text_primary"
             android:textSize="15sp"
@@ -349,6 +411,14 @@
                 app:strokeColor="@color/primary"
                 app:strokeWidth="1.5dp" />
         </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="@string/form_image_helper"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp" />
 
         <!-- ADD Button -->
         <Button

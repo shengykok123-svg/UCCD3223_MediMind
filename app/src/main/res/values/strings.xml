@@ -45,9 +45,21 @@
     <string name="upcoming">Upcoming</string>
     <string name="add_medication">Add Medication</string>
     <string name="no_medications">No medications scheduled for today.</string>
+    <string name="no_medications_for_day">No medications scheduled for this day.</string>
     <string name="manage_medications_subtitle_format">%d active medications</string>
     <string name="online_ready">Online - Ready to help</string>
     <string name="consult_doctor">Consult Doctor</string>
+    <string name="daily_status_summary">Daily status summary</string>
+    <string name="summary_taken">Taken</string>
+    <string name="summary_pending">Pending</string>
+    <string name="summary_missed">Missed</string>
+    <string name="count_value">%1$d</string>
+    <string name="status_badge_taken">Taken</string>
+    <string name="status_badge_pending">Pending</string>
+    <string name="status_badge_missed">Missed</string>
+    <string name="status_badge_upcoming">Upcoming</string>
+    <string name="status_badge_skipped">Skipped</string>
+    <string name="home_empty_hint">Choose another day or manage your medications to build a schedule.</string>
 
     <!-- Add Medication Dialog -->
     <string name="scan_medication">Scan medication</string>
@@ -85,6 +97,10 @@
     <string name="search_members_hint">Search members...</string>
     <string name="friends_count_format">Friends (%d)</string>
     <string name="community_subtitle">Manage medication schedules for your family members.</string>
+    <string name="community_empty_title">No community members yet</string>
+    <string name="community_empty_hint">Add a caregiver or family member to share live medication status.</string>
+    <string name="nickname_line_label">Nickname</string>
+    <string name="member_progress_format">%1$d/%2$d taken today</string>
     <string name="all_taken">All Taken</string>
     <string name="pending_format">%d Pending</string>
     <string name="add_member">Add Member</string>
@@ -142,8 +158,19 @@
     <string name="all">All</string>
     <string name="custom">Custom</string>
     <string name="filter_all_medications">Filter: All Medications</string>
-    <string name="filter_medications_format">Filter: %d of %d Medications</string>
+    <string name="filter_medications_format">Filter: %1$d of %2$d Medications</string>
     <string name="filter_by_medication">Filter by Medication</string>
+    <string name="report_context_title">Current view</string>
+    <string name="report_context_range">Range</string>
+    <string name="report_context_filter">Filter</string>
+    <string name="report_filter_all">All medications</string>
+    <string name="report_filter_selected">%1$d medications selected</string>
+    <string name="report_adherence_value">%1$.0f%% adherence</string>
+    <string name="report_empty_hint">Try expanding the range or selecting different medications.</string>
+    <string name="report_filter_subtitle">Choose which medications should be included in this view or export.</string>
+    <string name="report_filter_hint">Leave all selected to keep the report broad and comparable.</string>
+    <string name="export_settings_subtitle">Pick a date range first, then choose the medications to include in the PDF.</string>
+    <string name="export_settings_current">%1$s • %2$s</string>
     <string name="chip_more_format">+%d more</string>
     <string name="no_adherence_data">No adherence data yet</string>
     <string name="select_date_range">Select Date Range</string>
@@ -155,6 +182,9 @@
     <string name="deselect_all">Deselect All</string>
     <string name="share_report">Share Report</string>
     <string name="no_app_to_share">No app available to share</string>
+    <string name="apply">Apply</string>
+    <string name="continue_text">Continue</string>
+    <string name="no_medications_available">No medications available</string>
 
     <!-- Settings -->
     <string name="gender">Gender</string>
@@ -172,12 +202,30 @@
     <string name="edit_weight">Edit Weight</string>
     <string name="edit_blood_type">Edit Blood Type</string>
     <string name="edit_allergies">Edit Allergies</string>
+    <string name="edit_dialog_hint_name">Enter your display name</string>
+    <string name="edit_dialog_hint_email">Enter your email address</string>
+    <string name="edit_dialog_hint_weight">Enter weight in KG</string>
+    <string name="edit_dialog_hint_allergies">List allergies separated by commas</string>
+    <string name="edit_dialog_hint_nickname">Enter a nickname or title</string>
+    <string name="edit_dialog_subtitle_name">This name is shown across your profile and shared views.</string>
+    <string name="edit_dialog_subtitle_email">A verification email will be sent before the address changes.</string>
+    <string name="edit_dialog_subtitle_weight">Use your latest approximate weight in kilograms.</string>
+    <string name="edit_dialog_subtitle_allergies">Add any important allergies to keep your profile accurate.</string>
+    <string name="edit_dialog_subtitle_nickname">Choose a personal label that helps you recognize this member quickly.</string>
+    <string name="edit_dialog_subtitle_gender">Select the option that best matches your profile.</string>
+    <string name="edit_dialog_subtitle_blood_type">Choose your blood type for faster reference in reports and profile.</string>
+    <string name="edit_member_title">Edit Member Title</string>
+    <string name="save">Save</string>
     <string name="id_copied">ID copied to clipboard</string>
     <string name="profile_updated">Profile updated</string>
     <string name="loading_profile">Loading profile…</string>
     <string name="not_set">Not set</string>
     <string name="weight_kg_format">%s KG</string>
     <string name="id_format">ID: %s</string>
+    <string name="photo_picker_subtitle">Choose how you want to update the image shown on your profile and Community cards.</string>
+    <string name="photo_picker_camera_hint">Capture a new photo with the device camera.</string>
+    <string name="photo_picker_gallery_hint">Select an existing image from your gallery.</string>
+    <string name="logout_subtitle">Signing out will clear the local cache on this device and return you to the login screen.</string>
 
     <!-- Registration Health Fields -->
     <string name="select_gender">Select Gender</string>
@@ -226,6 +274,20 @@
     <string name="confirm_delete">Are you sure you want to delete this medication? This action cannot be undone.</string>
     <string name="confirm_delete_title">Delete Medication</string>
     <string name="no_medications_added">No medications added yet.</string>
+    <string name="section_medication_info">Medication Info</string>
+    <string name="section_schedule">Schedule</string>
+    <string name="section_dates">Dates</string>
+    <string name="section_supporting_details">Supporting Details</string>
+    <string name="form_scan_hint">Only clearly detected scan details are filled. Review before saving.</string>
+    <string name="form_manual_hint">Add the core details first. You can refine reminders and image anytime.</string>
+    <string name="form_frequency_helper">Set how many times the medication is taken within a repeating interval.</string>
+    <string name="form_dates_helper">The medication remains visible in history and reports after it expires.</string>
+    <string name="form_image_helper">Scanned medications keep the captured image. Manual entries use the default icon until changed.</string>
+    <string name="settings_profile_subtitle">Keep your account and health information up to date for clearer community sharing and reports.</string>
+    <string name="settings_photo_hint">Your profile photo is visible to connected community members.</string>
+    <string name="settings_section_account">Account Details</string>
+    <string name="settings_section_health">Health Details</string>
+    <string name="settings_logout_hint">You can sign in again anytime with your registered account.</string>
 
     <string-array name="meal_instructions_array">
         <item>Before Meal</item>

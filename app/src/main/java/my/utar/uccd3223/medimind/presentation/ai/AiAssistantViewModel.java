@@ -38,6 +38,7 @@ public class AiAssistantViewModel extends ViewModel {
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
     private final MutableLiveData<String> error = new MutableLiveData<>();
     private final MutableLiveData<Bitmap> pendingImage = new MutableLiveData<>();
+    private String pendingQuery;
 
     @Inject
     public AiAssistantViewModel(Executor executor) {
@@ -105,6 +106,16 @@ public class AiAssistantViewModel extends ViewModel {
 
     public void clearPendingImage() {
         pendingImage.setValue(null);
+    }
+
+    public void setPendingQuery(String query) {
+        pendingQuery = query != null ? query.trim() : null;
+    }
+
+    public String consumePendingQuery() {
+        String query = pendingQuery;
+        pendingQuery = null;
+        return query;
     }
 
     public void sendMessage(String text) {

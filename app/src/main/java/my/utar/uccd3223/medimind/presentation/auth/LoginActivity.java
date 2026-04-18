@@ -7,15 +7,16 @@ import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
+import android.view.Window;
 import android.view.View;
 import android.widget.Button;
+import android.app.Dialog;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
@@ -131,34 +132,42 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void showForgotPasswordDialog() {
-        EditText emailInput = new EditText(this);
-        emailInput.setHint(R.string.email);
-        emailInput.setInputType(android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
-        int padding = (int) (16 * getResources().getDisplayMetrics().density);
-        emailInput.setPadding(padding, padding, padding, padding);
+        Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_forgot_password);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            dialog.getWindow().setLayout(
+                    (int) (getResources().getDisplayMetrics().widthPixels * 0.92f),
+                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
 
-        // Pre-fill with email from login field if available
+        EditText emailInput = dialog.findViewById(R.id.input_email);
+        Button btnCancel = dialog.findViewById(R.id.btn_cancel);
+        Button btnSend = dialog.findViewById(R.id.btn_send);
+
         String currentEmail = inputEmail.getText().toString().trim();
         if (!currentEmail.isEmpty()) {
             emailInput.setText(currentEmail);
         }
 
-        new AlertDialog.Builder(this)
-                .setTitle(R.string.forgot_password_title)
-                .setMessage(R.string.forgot_password_message)
-                .setView(emailInput)
-                .setPositiveButton(R.string.send, (dialog, which) -> {
-                    String email = emailInput.getText().toString().trim();
-                    if (!email.isEmpty()) {
-                        firebaseAuth.sendPasswordResetEmail(email)
-                                .addOnSuccessListener(aVoid ->
-                                        Toast.makeText(this, R.string.reset_email_sent, Toast.LENGTH_LONG).show())
-                                .addOnFailureListener(e ->
-                                        Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show());
-                    }
-                })
-                .setNegativeButton(android.R.string.cancel, null)
-                .show();
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+        btnSend.setOnClickListener(v -> {
+            String email = emailInput.getText().toString().trim();
+            if (email.isEmpty()) {
+                emailInput.setError(getString(R.string.email));
+                return;
+            }
+            firebaseAuth.sendPasswordResetEmail(email)
+                    .addOnSuccessListener(aVoid -> {
+                        dialog.dismiss();
+                        Toast.makeText(this, R.string.reset_email_sent, Toast.LENGTH_LONG).show();
+                    })
+                    .addOnFailureListener(e ->
+                            Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show());
+        });
+
+        dialog.show();
     }
 
     private void syncAndNavigate() {

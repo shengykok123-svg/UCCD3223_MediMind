@@ -97,6 +97,10 @@ public class CommunityViewModel extends ViewModel {
     public LiveData<String> getError() { return error; }
     public LiveData<String> getToastMessage() { return toastMessage; }
 
+    public void clearToastMessage() {
+        toastMessage.setValue(null);
+    }
+
     // ─── Initialization ──────────────────────────────────────────
 
     private void attachCurrentUserListener() {
@@ -296,7 +300,12 @@ public class CommunityViewModel extends ViewModel {
     private void publishMembers() {
         List<CommunityMember> snapshot;
         synchronized (memberState) {
-            snapshot = new ArrayList<>(memberState.values());
+            snapshot = new ArrayList<>();
+            for (CommunityMember member : memberState.values()) {
+                if (member != null && !member.isSelf()) {
+                    snapshot.add(member);
+                }
+            }
         }
         members.postValue(snapshot);
     }
@@ -573,15 +582,37 @@ public class CommunityViewModel extends ViewModel {
     public void updateMemberCustomTitle(String memberUid, String customTitle) {
         if (currentUid == null || memberUid == null || memberUid.isEmpty()) return;
 
+        String normalizedTitle = customTitle != null ? customTitle.trim() : "";
+        String previousTitle = null;
+        synchronized (memberState) {
+            CommunityMember member = memberState.get(memberUid);
+            if (member != null) {
+                previousTitle = member.getCustomTitle();
+                member.setCustomTitle(normalizedTitle);
+                memberState.put(memberUid, member);
+            }
+        }
+        publishMembers();
+        final String rollbackTitle = previousTitle;
+
         Map<String, Object> updates = new HashMap<>();
-        updates.put("customTitle", customTitle != null ? customTitle.trim() : "");
+        updates.put("customTitle", normalizedTitle);
 
         firestore.collection("users").document(currentUid)
                 .collection("community_members").document(memberUid)
                 .update(updates)
                 .addOnSuccessListener(aVoid -> toastMessage.postValue("Title updated"))
-                .addOnFailureListener(err ->
-                        error.postValue("Failed to update title: " + err.getMessage()));
+                .addOnFailureListener(err -> {
+                    synchronized (memberState) {
+                        CommunityMember member = memberState.get(memberUid);
+                        if (member != null) {
+                            member.setCustomTitle(rollbackTitle);
+                            memberState.put(memberUid, member);
+                        }
+                    }
+                    publishMembers();
+                    error.postValue("Failed to update title: " + err.getMessage());
+                });
     }
 
     // ─── Mark Requests Read ──────────────────────────────────────

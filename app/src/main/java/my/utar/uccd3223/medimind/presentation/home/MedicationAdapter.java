@@ -4,6 +4,7 @@ import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
@@ -147,7 +148,9 @@ public class MedicationAdapter extends ListAdapter<MedicationScheduleItem, Medic
             if (isTaken) {
                 binding.timelineDot.setBackgroundResource(R.drawable.bg_timeline_dot_filled);
                 binding.medicationCard.setCardBackgroundColor(
-                        ContextCompat.getColor(itemView.getContext(), R.color.surface));
+                        ContextCompat.getColor(itemView.getContext(), R.color.success_surface));
+                applyStatusBadge(binding.textStatusBadge, R.string.status_badge_taken,
+                        R.drawable.bg_status_pill_taken, R.color.success);
                 binding.btnTakeNow.setCompoundDrawables(null, null, null, null);
                 binding.btnTakeNow.setText("Taken");
                 binding.btnTakeNow.setEnabled(false);
@@ -158,7 +161,9 @@ public class MedicationAdapter extends ListAdapter<MedicationScheduleItem, Medic
             } else if (isMissed) {
                 binding.timelineDot.setBackgroundResource(R.drawable.bg_timeline_dot_missed);
                 binding.medicationCard.setCardBackgroundColor(
-                        ContextCompat.getColor(itemView.getContext(), R.color.error_light));
+                        ContextCompat.getColor(itemView.getContext(), R.color.error_surface));
+                applyStatusBadge(binding.textStatusBadge, R.string.status_badge_missed,
+                        R.drawable.bg_status_pill_missed, R.color.error);
 
                 // Warning icon as compound drawable on the button
                 Drawable warn = ContextCompat.getDrawable(itemView.getContext(), R.drawable.ic_warning);
@@ -191,7 +196,9 @@ public class MedicationAdapter extends ListAdapter<MedicationScheduleItem, Medic
             } else if (isSkipped) {
                 binding.timelineDot.setBackgroundResource(R.drawable.bg_timeline_dot_filled);
                 binding.medicationCard.setCardBackgroundColor(
-                        ContextCompat.getColor(itemView.getContext(), R.color.surface));
+                        ContextCompat.getColor(itemView.getContext(), R.color.surface_elevated));
+                applyStatusBadge(binding.textStatusBadge, R.string.status_badge_skipped,
+                        R.drawable.bg_status_pill_upcoming, R.color.primary_dark);
                 binding.btnTakeNow.setCompoundDrawables(null, null, null, null);
                 binding.btnTakeNow.setText(R.string.skipped);
                 binding.btnTakeNow.setEnabled(false);
@@ -203,7 +210,9 @@ public class MedicationAdapter extends ListAdapter<MedicationScheduleItem, Medic
                 // Scheduled time hasn't arrived yet (today or future date)
                 binding.timelineDot.setBackgroundResource(R.drawable.bg_timeline_dot_empty);
                 binding.medicationCard.setCardBackgroundColor(
-                        ContextCompat.getColor(itemView.getContext(), R.color.surface));
+                        ContextCompat.getColor(itemView.getContext(), R.color.info_surface));
+                applyStatusBadge(binding.textStatusBadge, R.string.status_badge_upcoming,
+                        R.drawable.bg_status_pill_upcoming, R.color.primary_dark);
                 binding.btnTakeNow.setCompoundDrawables(null, null, null, null);
                 binding.btnTakeNow.setText(R.string.upcoming);
                 binding.btnTakeNow.setEnabled(false);
@@ -215,7 +224,9 @@ public class MedicationAdapter extends ListAdapter<MedicationScheduleItem, Medic
                 // PENDING fallback - show Take Now
                 binding.timelineDot.setBackgroundResource(R.drawable.bg_timeline_dot_empty);
                 binding.medicationCard.setCardBackgroundColor(
-                        ContextCompat.getColor(itemView.getContext(), R.color.surface));
+                        ContextCompat.getColor(itemView.getContext(), R.color.warning_surface));
+                applyStatusBadge(binding.textStatusBadge, R.string.status_badge_pending,
+                        R.drawable.bg_status_pill_pending, R.color.warning);
                 binding.btnTakeNow.setCompoundDrawables(null, null, null, null);
                 binding.btnTakeNow.setText(R.string.take_now);
                 binding.btnTakeNow.setEnabled(true);
@@ -256,6 +267,12 @@ public class MedicationAdapter extends ListAdapter<MedicationScheduleItem, Medic
             } catch (Exception e) {
                 return null;
             }
+        }
+
+        private void applyStatusBadge(TextView badgeView, int textRes, int backgroundRes, int textColorRes) {
+            badgeView.setText(textRes);
+            badgeView.setBackgroundResource(backgroundRes);
+            badgeView.setTextColor(ContextCompat.getColor(itemView.getContext(), textColorRes));
         }
     }
 }

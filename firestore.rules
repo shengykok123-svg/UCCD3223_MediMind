@@ -18,8 +18,11 @@ service cloud.firestore {
 
     // Users collection
     match /users/{userId} {
-      // User can read/write their own profile
-      allow read, write: if isOwner(userId);
+      // Users must be able to look up other registered users by shareableId
+      // and community screens read connected members' name/photo documents.
+      // Keep writes owner-only.
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId);
 
       // Medications sub-collection
       match /medications/{medicationId} {
