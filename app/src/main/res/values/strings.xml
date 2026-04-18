@@ -240,4 +240,6 @@
     <string name="reports">Reports</string>
     <string name="profile">Profile</string>
     <string name="clear_chat">Clear Chat</string>
+
+    <string name="no_medications_found">No medications found</string>
 </resources>

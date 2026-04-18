@@ -23,6 +23,7 @@ import android.util.Log;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +55,8 @@ public class CommunityViewModel extends ViewModel {
 
     private ListenerRegistration membersListener;
     private ListenerRegistration requestsListener;
+    private final Map<String, ListenerRegistration> adherenceListeners = new HashMap<>();
+    private final Map<String, CommunityMember> memberState = new LinkedHashMap<>();
     private AdherenceSyncHelper syncHelper;
 
     private String currentUid;
@@ -67,7 +70,7 @@ public class CommunityViewModel extends ViewModel {
 
     @Inject
     public CommunityViewModel(MedicationRepository repository, Executor executor,
-                               Context context, FirebaseFirestore firestore) {
+                              Context context, FirebaseFirestore firestore) {
         this.repository = repository;
         this.executor = executor;
         this.context = context;
@@ -119,19 +122,17 @@ public class CommunityViewModel extends ViewModel {
                 .collection("community_members")
                 .addSnapshotListener((snapshots, e) -> {
                     if (e != null) return;
-                    loadMemberAdherence();
+                    observeCommunityMembers(snapshots);
                 });
     }
 
     public void loadMemberAdherence() {
-        if (currentUid == null) return;
+        if (currentUid == null || syncHelper == null) return;
         isLoading.postValue(true);
 
-        // First sync own data
         syncHelper.syncTodayAdherence(new AdherenceSyncHelper.SyncCallback() {
             @Override
             public void onSynced(int takenCount, int pendingCount, int missedCount, int totalCount) {
-                // Build self member
                 CommunityMember self = new CommunityMember(currentUid, currentUserName, currentShareableId, true);
                 self.setTakenCount(takenCount);
                 self.setPendingCount(pendingCount);
@@ -139,95 +140,184 @@ public class CommunityViewModel extends ViewModel {
                 self.setTotalCount(totalCount);
                 self.setProfileImagePath(currentProfileImage);
 
-                // Now load community members
-                firestore.collection("users").document(currentUid)
-                        .collection("community_members").get()
-                        .addOnSuccessListener(snapshots -> {
-                            List<CommunityMember> memberList = new ArrayList<>();
-                            memberList.add(self);
-
-                            if (snapshots.isEmpty()) {
-                                members.postValue(memberList);
-                                isLoading.postValue(false);
-                                return;
-                            }
-
-                            final int[] remaining = {snapshots.size()};
-
-                            for (QueryDocumentSnapshot doc : snapshots) {
-                                String memberUid = doc.getId();
-                                String memberName = doc.getString("name");
-                                String memberShareableId = doc.getString("shareableId");
-
-                                CommunityMember member = new CommunityMember(memberUid, memberName, memberShareableId, false);
-
-                                // Load member's profile image
-                                firestore.collection("users").document(memberUid).get()
-                                        .addOnSuccessListener(userDoc -> {
-                                            if (userDoc.exists()) {
-                                                member.setProfileImagePath(userDoc.getString("profileImagePath"));
-                                            }
-
-                                            // Load adherence data
-                                            String today = LocalDate.now().toString();
-                                            firestore.collection("users").document(memberUid)
-                                                    .collection("daily_adherence").document(today).get()
-                                                    .addOnSuccessListener(adherenceDoc -> {
-                                                        if (adherenceDoc.exists()) {
-                                                            Long taken = adherenceDoc.getLong("takenCount");
-                                                            Long missed = adherenceDoc.getLong("missedCount");
-                                                            Long pending = adherenceDoc.getLong("pendingCount");
-                                                            Long total = adherenceDoc.getLong("totalCount");
-                                                            member.setTakenCount(taken != null ? taken.intValue() : 0);
-                                                            member.setMissedCount(missed != null ? missed.intValue() : 0);
-                                                            member.setPendingCount(pending != null ? pending.intValue() : 0);
-                                                            member.setTotalCount(total != null ? total.intValue() : 0);
-                                                        }
-                                                        memberList.add(member);
-                                                        remaining[0]--;
-                                                        if (remaining[0] == 0) {
-                                                            members.postValue(memberList);
-                                                            isLoading.postValue(false);
-                                                        }
-                                                    })
-                                                    .addOnFailureListener(err -> {
-                                                        memberList.add(member);
-                                                        remaining[0]--;
-                                                        if (remaining[0] == 0) {
-                                                            members.postValue(memberList);
-                                                            isLoading.postValue(false);
-                                                        }
-                                                    });
-                                        })
-                                        .addOnFailureListener(err -> {
-                                            memberList.add(member);
-                                            remaining[0]--;
-                                            if (remaining[0] == 0) {
-                                                members.postValue(memberList);
-                                                isLoading.postValue(false);
-                                            }
-                                        });
-                            }
-                        })
-                        .addOnFailureListener(err -> {
-                            List<CommunityMember> memberList = new ArrayList<>();
-                            memberList.add(self);
-                            members.postValue(memberList);
-                            isLoading.postValue(false);
-                        });
+                synchronized (memberState) {
+                    memberState.put(currentUid, self);
+                }
+                publishMembers();
+                isLoading.postValue(false);
             }
 
             @Override
             public void onError(String message) {
-                // Even if sync fails, still try to show cached data
-                CommunityMember self = new CommunityMember(currentUid, currentUserName, currentShareableId, true);
-                self.setProfileImagePath(currentProfileImage);
-                List<CommunityMember> memberList = new ArrayList<>();
-                memberList.add(self);
-                members.postValue(memberList);
+                error.postValue(message);
                 isLoading.postValue(false);
             }
         });
+    }
+
+    private void observeCommunityMembers(com.google.firebase.firestore.QuerySnapshot snapshots) {
+        if (currentUid == null) return;
+
+        Set<String> activeUids = new HashSet<>();
+        activeUids.add(currentUid);
+
+        if (snapshots != null) {
+            for (QueryDocumentSnapshot doc : snapshots) {
+                String memberUid = doc.getId();
+                activeUids.add(memberUid);
+
+                CommunityMember existing;
+                synchronized (memberState) {
+                    existing = memberState.get(memberUid);
+                }
+                if (existing == null) {
+                    existing = new CommunityMember(memberUid, doc.getString("name"), doc.getString("shareableId"), false);
+                } else {
+                    existing.setName(doc.getString("name"));
+                    existing.setShareableId(doc.getString("shareableId"));
+                    existing.setSelf(false);
+                }
+
+                final CommunityMember member = existing;
+                synchronized (memberState) {
+                    memberState.put(memberUid, member);
+                }
+
+                firestore.collection("users").document(memberUid).get()
+                        .addOnSuccessListener(userDoc -> {
+                            if (userDoc.exists()) {
+                                member.setProfileImagePath(userDoc.getString("profileImagePath"));
+                                String latestName = userDoc.getString("name");
+                                if (latestName != null && !latestName.isEmpty()) {
+                                    member.setName(latestName);
+                                }
+                                String latestShareableId = userDoc.getString("shareableId");
+                                if (latestShareableId != null && !latestShareableId.isEmpty()) {
+                                    member.setShareableId(latestShareableId);
+                                }
+                                synchronized (memberState) {
+                                    memberState.put(memberUid, member);
+                                }
+                                publishMembers();
+                            }
+                        });
+
+                attachMemberAdherenceListener(memberUid, member);
+            }
+        }
+
+        removeInactiveMemberListeners(activeUids);
+        publishMembers();
+        loadMemberAdherence();
+    }
+
+    private void attachMemberAdherenceListener(String memberUid, CommunityMember member) {
+        if (adherenceListeners.containsKey(memberUid)) return;
+
+        String today = LocalDate.now().toString();
+        ListenerRegistration registration = firestore.collection("users").document(memberUid)
+                .collection("daily_adherence").document(today)
+                .addSnapshotListener((adherenceDoc, err) -> {
+                    if (err != null) return;
+
+                    applyAdherenceSnapshot(member, adherenceDoc);
+                    synchronized (memberState) {
+                        memberState.put(memberUid, member);
+                    }
+                    publishMembers();
+                });
+
+        adherenceListeners.put(memberUid, registration);
+    }
+
+    private void removeInactiveMemberListeners(Set<String> activeUids) {
+        List<String> toRemove = new ArrayList<>();
+        for (Map.Entry<String, ListenerRegistration> entry : adherenceListeners.entrySet()) {
+            if (!activeUids.contains(entry.getKey())) {
+                entry.getValue().remove();
+                toRemove.add(entry.getKey());
+            }
+        }
+
+        for (String uid : toRemove) {
+            adherenceListeners.remove(uid);
+            synchronized (memberState) {
+                memberState.remove(uid);
+            }
+        }
+    }
+
+    private void publishMembers() {
+        List<CommunityMember> snapshot;
+        synchronized (memberState) {
+            snapshot = new ArrayList<>(memberState.values());
+        }
+        members.postValue(snapshot);
+    }
+
+    private void applyAdherenceSnapshot(CommunityMember member, DocumentSnapshot adherenceDoc) {
+        int taken = 0;
+        int missed = 0;
+        int pending = 0;
+        int total = 0;
+
+        if (adherenceDoc != null && adherenceDoc.exists()) {
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> medications = (List<Map<String, Object>>) adherenceDoc.get("medications");
+
+            if (medications != null && !medications.isEmpty()) {
+                for (Map<String, Object> med : medications) {
+                    String status = getStringValue(med, "status", "todayStatus");
+                    total++;
+                    if ("TAKEN".equalsIgnoreCase(status)) {
+                        taken++;
+                    } else if ("MISSED".equalsIgnoreCase(status)) {
+                        missed++;
+                    } else {
+                        pending++;
+                    }
+                }
+            } else {
+                taken = getIntValue(adherenceDoc, "takenCount", "taken");
+                missed = getIntValue(adherenceDoc, "missedCount", "missed");
+                pending = getIntValue(adherenceDoc, "pendingCount", "pending");
+                total = getIntValue(adherenceDoc, "totalCount", "totalScheduled", "scheduledCount");
+
+                if (total <= 0) {
+                    total = taken + missed + pending;
+                }
+
+                int recomputedPending = total - taken - missed;
+                if (recomputedPending >= 0 && recomputedPending != pending) {
+                    pending = recomputedPending;
+                }
+            }
+        }
+
+        member.setTakenCount(taken);
+        member.setMissedCount(missed);
+        member.setPendingCount(pending);
+        member.setTotalCount(total);
+    }
+
+    private int getIntValue(DocumentSnapshot doc, String... keys) {
+        if (doc == null) return 0;
+        for (String key : keys) {
+            Long value = doc.getLong(key);
+            if (value != null) return value.intValue();
+            Number number = doc.getDouble(key);
+            if (number != null) return number.intValue();
+        }
+        return 0;
+    }
+
+    private String getStringValue(Map<String, Object> map, String... keys) {
+        if (map == null) return null;
+        for (String key : keys) {
+            Object value = map.get(key);
+            if (value != null) return String.valueOf(value);
+        }
+        return null;
     }
 
     // ─── Requests Listener ───────────────────────────────────────
@@ -463,6 +553,36 @@ public class CommunityViewModel extends ViewModel {
         void onError(String message);
     }
 
+    public ListenerRegistration observeMemberMedications(String memberUid, MedicationListCallback callback) {
+        String today = LocalDate.now().toString();
+
+        return firestore.collection("users").document(memberUid)
+                .collection("daily_adherence").document(today)
+                .addSnapshotListener((doc, e) -> {
+                    if (e != null) {
+                        callback.onError(e.getMessage() != null ? e.getMessage() : "Failed to load medication history");
+                        return;
+                    }
+
+                    if (doc == null || !doc.exists()) {
+                        callback.onResult(new ArrayList<>(), 0, 0, 0);
+                        return;
+                    }
+
+                    CommunityMember tempMember = new CommunityMember();
+                    applyAdherenceSnapshot(tempMember, doc);
+
+                    @SuppressWarnings("unchecked")
+                    List<Map<String, Object>> medications = (List<Map<String, Object>>) doc.get("medications");
+                    if (medications == null) medications = new ArrayList<>();
+
+                    callback.onResult(medications,
+                            tempMember.getTakenCount(),
+                            tempMember.getPendingCount(),
+                            tempMember.getMissedCount());
+                });
+    }
+
     public void getMemberMedications(String memberUid, MedicationListCallback callback) {
         String today = LocalDate.now().toString();
 
@@ -474,18 +594,17 @@ public class CommunityViewModel extends ViewModel {
                         return;
                     }
 
-                    Long taken = doc.getLong("takenCount");
-                    Long pending = doc.getLong("pendingCount");
-                    Long missed = doc.getLong("missedCount");
+                    CommunityMember tempMember = new CommunityMember();
+                    applyAdherenceSnapshot(tempMember, doc);
 
                     @SuppressWarnings("unchecked")
                     List<Map<String, Object>> medications = (List<Map<String, Object>>) doc.get("medications");
                     if (medications == null) medications = new ArrayList<>();
 
                     callback.onResult(medications,
-                            taken != null ? taken.intValue() : 0,
-                            pending != null ? pending.intValue() : 0,
-                            missed != null ? missed.intValue() : 0);
+                            tempMember.getTakenCount(),
+                            tempMember.getPendingCount(),
+                            tempMember.getMissedCount());
                 })
                 .addOnFailureListener(e -> callback.onError(e.getMessage()));
     }
@@ -524,5 +643,9 @@ public class CommunityViewModel extends ViewModel {
         super.onCleared();
         if (membersListener != null) membersListener.remove();
         if (requestsListener != null) requestsListener.remove();
+        for (ListenerRegistration registration : adherenceListeners.values()) {
+            registration.remove();
+        }
+        adherenceListeners.clear();
     }
 }

@@ -27,6 +27,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
+
+import com.google.firebase.firestore.ListenerRegistration;
 import java.util.Map;
 
 import my.utar.uccd3223.medimind.R;
@@ -278,39 +280,43 @@ public class CommunityFragment extends Fragment {
 
         btnClose.setOnClickListener(v -> dialog.dismiss());
 
-        // Load medication data
-        viewModel.getMemberMedications(member.getUid(), new CommunityViewModel.MedicationListCallback() {
-            @Override
-            public void onResult(List<Map<String, Object>> medications, int taken, int pending, int missed) {
-                if (!isAdded()) return;
+        final ListenerRegistration medicationListener = viewModel.observeMemberMedications(
+                member.getUid(),
+                new CommunityViewModel.MedicationListCallback() {
+                    @Override
+                    public void onResult(List<Map<String, Object>> medications, int taken, int pending, int missed) {
+                        if (!isAdded()) return;
 
-                requireActivity().runOnUiThread(() -> {
-                    textSummaryTaken.setText(getString(R.string.taken_count_format, taken));
-                    textSummaryPending.setText(getString(R.string.pending_count_format, pending));
-                    textSummaryMissed.setText(getString(R.string.missed_count_format, missed));
+                        requireActivity().runOnUiThread(() -> {
+                            textSummaryTaken.setText(getString(R.string.taken_count_format, taken));
+                            textSummaryPending.setText(getString(R.string.pending_count_format, pending));
+                            textSummaryMissed.setText(getString(R.string.missed_count_format, missed));
 
-                    if (medications.isEmpty()) {
-                        textEmpty.setVisibility(View.VISIBLE);
-                        recyclerMedications.setVisibility(View.GONE);
-                    } else {
-                        textEmpty.setVisibility(View.GONE);
-                        recyclerMedications.setVisibility(View.VISIBLE);
-                        recyclerMedications.setAdapter(new MedicationDetailAdapter(medications));
+                            if (medications.isEmpty()) {
+                                textEmpty.setVisibility(View.VISIBLE);
+                                textEmpty.setText(R.string.no_medications_found);
+                                recyclerMedications.setVisibility(View.GONE);
+                            } else {
+                                textEmpty.setVisibility(View.GONE);
+                                recyclerMedications.setVisibility(View.VISIBLE);
+                                recyclerMedications.setAdapter(new MedicationDetailAdapter(medications));
+                            }
+                        });
                     }
-                });
-            }
 
-            @Override
-            public void onError(String message) {
-                if (!isAdded()) return;
-                requireActivity().runOnUiThread(() -> {
-                    textEmpty.setVisibility(View.VISIBLE);
-                    textEmpty.setText(message);
-                    recyclerMedications.setVisibility(View.GONE);
-                });
-            }
-        });
+                    @Override
+                    public void onError(String message) {
+                        if (!isAdded()) return;
+                        requireActivity().runOnUiThread(() -> {
+                            textEmpty.setVisibility(View.VISIBLE);
+                            textEmpty.setText(message);
+                            recyclerMedications.setVisibility(View.GONE);
+                        });
+                    }
+                }
+        );
 
+        dialog.setOnDismissListener(d -> medicationListener.remove());
         dialog.show();
     }
 
