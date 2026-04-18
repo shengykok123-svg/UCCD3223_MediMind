@@ -55,8 +55,11 @@ public class CommunityMemberAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         } else {
             String lowerQuery = query.toLowerCase().trim();
             for (CommunityMember member : allMembers) {
-                if (member.getName() != null
-                        && member.getName().toLowerCase().contains(lowerQuery)) {
+                boolean matchesName = member.getName() != null
+                        && member.getName().toLowerCase().contains(lowerQuery);
+                boolean matchesTitle = member.getCustomTitle() != null
+                        && member.getCustomTitle().toLowerCase().contains(lowerQuery);
+                if (matchesName || matchesTitle) {
                     members.add(member);
                 }
             }
@@ -120,15 +123,18 @@ public class CommunityMemberAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         }
 
         void bind(CommunityMember member) {
-            // Relation label
-            if (member.isSelf()) {
+            String defaultName = member.getName() != null ? member.getName() : "";
+            String customTitle = member.getCustomTitle() != null ? member.getCustomTitle().trim() : "";
+
+            if (!customTitle.isEmpty()) {
+                textRelation.setText(customTitle);
+            } else if (member.isSelf()) {
                 textRelation.setText(R.string.me_label);
             } else {
-                textRelation.setText(member.getName() != null ? member.getName() : "");
+                textRelation.setText(defaultName);
             }
 
-            // Name
-            textName.setText(member.getName() != null ? member.getName() : "");
+            textName.setText(defaultName);
 
             // Avatar — use Glide with circle crop, matching SettingsFragment pattern
             String imagePath = member.getProfileImagePath();

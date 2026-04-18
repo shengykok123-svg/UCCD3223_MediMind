@@ -3,6 +3,7 @@ package my.utar.uccd3223.medimind.presentation.community;
 public class CommunityMember {
     private String uid;
     private String name;
+    private String customTitle;
     private String shareableId;
     private String profileImagePath;
     private int takenCount;
@@ -25,6 +26,9 @@ public class CommunityMember {
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+
+    public String getCustomTitle() { return customTitle; }
+    public void setCustomTitle(String customTitle) { this.customTitle = customTitle; }
 
     public String getShareableId() { return shareableId; }
     public void setShareableId(String shareableId) { this.shareableId = shareableId; }

@@ -4,6 +4,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.text.TextUtils;
 
 import androidx.core.app.NotificationCompat;
 import androidx.lifecycle.LiveData;
@@ -55,9 +56,12 @@ public class CommunityViewModel extends ViewModel {
 
     private ListenerRegistration membersListener;
     private ListenerRegistration requestsListener;
+    private ListenerRegistration currentUserListener;
     private final Map<String, ListenerRegistration> adherenceListeners = new HashMap<>();
+    private final Map<String, ListenerRegistration> userListeners = new HashMap<>();
     private final Map<String, CommunityMember> memberState = new LinkedHashMap<>();
     private AdherenceSyncHelper syncHelper;
+    private boolean listenersAttached = false;
 
     private String currentUid;
     private String currentUserName;
@@ -80,7 +84,7 @@ public class CommunityViewModel extends ViewModel {
         if (user != null) {
             currentUid = user.getUid();
             syncHelper = new AdherenceSyncHelper(repository);
-            loadCurrentUserInfo();
+            attachCurrentUserListener();
         }
     }
 
@@ -95,22 +99,55 @@ public class CommunityViewModel extends ViewModel {
 
     // ─── Initialization ──────────────────────────────────────────
 
-    private void loadCurrentUserInfo() {
-        firestore.collection("users").document(currentUid).get()
-                .addOnSuccessListener(doc -> {
-                    if (doc.exists()) {
-                        currentUserName = doc.getString("name");
-                        currentShareableId = doc.getString("shareableId");
-                        currentProfileImage = doc.getString("profileImagePath");
-                        attachListeners();
+    private void attachCurrentUserListener() {
+        if (currentUid == null || currentUserListener != null) return;
+
+        currentUserListener = firestore.collection("users").document(currentUid)
+                .addSnapshotListener((doc, e) -> {
+                    if (e != null) {
+                        error.postValue("Failed to load user info");
+                        return;
                     }
-                })
-                .addOnFailureListener(e -> error.postValue("Failed to load user info"));
+                    if (doc == null || !doc.exists()) return;
+
+                    currentUserName = doc.getString("name");
+                    currentShareableId = doc.getString("shareableId");
+                    currentProfileImage = doc.getString("profileImagePath");
+
+                    CommunityMember self;
+                    synchronized (memberState) {
+                        self = memberState.get(currentUid);
+                    }
+                    if (self != null) {
+                        self.setName(currentUserName);
+                        self.setShareableId(currentShareableId);
+                        self.setProfileImagePath(currentProfileImage);
+                        self.setSelf(true);
+                        synchronized (memberState) {
+                            memberState.put(currentUid, self);
+                        }
+                        publishMembers();
+                    }
+
+                    attachListeners();
+                });
     }
 
     private void attachListeners() {
+        if (listenersAttached) return;
+        listenersAttached = true;
         attachMembersListener();
         attachRequestsListener();
+    }
+
+    public void refreshCommunityData() {
+        if (currentUid == null) return;
+        if (currentUserListener == null) {
+            attachCurrentUserListener();
+        }
+        attachListeners();
+        loadMemberAdherence();
+        publishMembers();
     }
 
     // ─── Members Listener ────────────────────────────────────────
@@ -177,31 +214,13 @@ public class CommunityViewModel extends ViewModel {
                     existing.setShareableId(doc.getString("shareableId"));
                     existing.setSelf(false);
                 }
+                existing.setCustomTitle(doc.getString("customTitle"));
 
                 final CommunityMember member = existing;
                 synchronized (memberState) {
                     memberState.put(memberUid, member);
                 }
-
-                firestore.collection("users").document(memberUid).get()
-                        .addOnSuccessListener(userDoc -> {
-                            if (userDoc.exists()) {
-                                member.setProfileImagePath(userDoc.getString("profileImagePath"));
-                                String latestName = userDoc.getString("name");
-                                if (latestName != null && !latestName.isEmpty()) {
-                                    member.setName(latestName);
-                                }
-                                String latestShareableId = userDoc.getString("shareableId");
-                                if (latestShareableId != null && !latestShareableId.isEmpty()) {
-                                    member.setShareableId(latestShareableId);
-                                }
-                                synchronized (memberState) {
-                                    memberState.put(memberUid, member);
-                                }
-                                publishMembers();
-                            }
-                        });
-
+                attachMemberUserListener(memberUid, member);
                 attachMemberAdherenceListener(memberUid, member);
             }
         }
@@ -241,10 +260,37 @@ public class CommunityViewModel extends ViewModel {
 
         for (String uid : toRemove) {
             adherenceListeners.remove(uid);
+            ListenerRegistration userRegistration = userListeners.remove(uid);
+            if (userRegistration != null) userRegistration.remove();
             synchronized (memberState) {
                 memberState.remove(uid);
             }
         }
+    }
+
+    private void attachMemberUserListener(String memberUid, CommunityMember member) {
+        if (userListeners.containsKey(memberUid)) return;
+
+        ListenerRegistration registration = firestore.collection("users").document(memberUid)
+                .addSnapshotListener((userDoc, err) -> {
+                    if (err != null || userDoc == null || !userDoc.exists()) return;
+
+                    member.setProfileImagePath(userDoc.getString("profileImagePath"));
+                    String latestName = userDoc.getString("name");
+                    if (!TextUtils.isEmpty(latestName)) {
+                        member.setName(latestName);
+                    }
+                    String latestShareableId = userDoc.getString("shareableId");
+                    if (!TextUtils.isEmpty(latestShareableId)) {
+                        member.setShareableId(latestShareableId);
+                    }
+                    synchronized (memberState) {
+                        memberState.put(memberUid, member);
+                    }
+                    publishMembers();
+                });
+
+        userListeners.put(memberUid, registration);
     }
 
     private void publishMembers() {
@@ -524,6 +570,20 @@ public class CommunityViewModel extends ViewModel {
                         error.postValue("Failed to ignore request: " + err.getMessage()));
     }
 
+    public void updateMemberCustomTitle(String memberUid, String customTitle) {
+        if (currentUid == null || memberUid == null || memberUid.isEmpty()) return;
+
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("customTitle", customTitle != null ? customTitle.trim() : "");
+
+        firestore.collection("users").document(currentUid)
+                .collection("community_members").document(memberUid)
+                .update(updates)
+                .addOnSuccessListener(aVoid -> toastMessage.postValue("Title updated"))
+                .addOnFailureListener(err ->
+                        error.postValue("Failed to update title: " + err.getMessage()));
+    }
+
     // ─── Mark Requests Read ──────────────────────────────────────
 
     public void markRequestsRead() {
@@ -643,9 +703,14 @@ public class CommunityViewModel extends ViewModel {
         super.onCleared();
         if (membersListener != null) membersListener.remove();
         if (requestsListener != null) requestsListener.remove();
+        if (currentUserListener != null) currentUserListener.remove();
         for (ListenerRegistration registration : adherenceListeners.values()) {
             registration.remove();
         }
+        for (ListenerRegistration registration : userListeners.values()) {
+            registration.remove();
+        }
         adherenceListeners.clear();
+        userListeners.clear();
     }
 }

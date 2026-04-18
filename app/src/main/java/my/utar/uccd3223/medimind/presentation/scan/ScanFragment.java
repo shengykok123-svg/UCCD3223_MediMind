@@ -189,9 +189,18 @@ public class ScanFragment extends Fragment {
         binding.btnAddSchedule.setOnClickListener(v -> {
             ScanResult result = viewModel.getScanResult().getValue();
             if (result != null) {
+                if (!result.hasMeaningfulPrefillData()) {
+                    Toast.makeText(requireContext(),
+                            "No reliable medication fields were extracted. Please retake or add manually.",
+                            Toast.LENGTH_LONG).show();
+                    return;
+                }
                 Bundle args = new Bundle();
                 args.putString("scanned_med_name", result.getMedicationName());
                 args.putString("scanned_med_dosage", result.getDosage());
+                args.putString("scanned_med_frequency_doses", result.getFrequencyDoses());
+                args.putString("scanned_med_frequency_days", result.getFrequencyDays());
+                args.putString("scanned_med_meal_instructions", result.getMealInstructions());
                 if (result.getCapturedImage() != null) {
                     String imagePath = saveBitmapToInternalStorage(result.getCapturedImage());
                     if (imagePath != null) {
@@ -207,8 +216,10 @@ public class ScanFragment extends Fragment {
         binding.btnAskAi.setOnClickListener(v -> {
             ScanResult result = viewModel.getScanResult().getValue();
             if (result != null) {
-                String query = "Tell me about " + result.getMedicationName()
-                        + " (" + result.getDosage() + "). "
+                String medName = valueOrFallback(result.getMedicationName(), "this medication");
+                String dosage = valueOrFallback(result.getDosage(), "the visible dosage");
+                String query = "Tell me about " + medName
+                        + " (" + dosage + "). "
                         + "What are its uses, side effects, and important interactions?";
                 viewModel.setPendingAiQuery(query);
                 BottomNavigationView bottomNav = requireActivity().findViewById(R.id.bottom_navigation);
@@ -223,17 +234,22 @@ public class ScanFragment extends Fragment {
             if (result != null) {
                 binding.scanResultCard.setVisibility(View.VISIBLE);
                 binding.resultBackdrop.setVisibility(View.VISIBLE);
-                binding.textMedName.setText(result.getMedicationName());
-                binding.textMedDetails.setText(result.getDosage());
-                binding.textMedType.setText(result.getType());
-                binding.textMedUsage.setText(result.getUsage());
+                binding.textMedName.setText(valueOrFallback(result.getMedicationName(), "Medication not clearly identified"));
+                binding.textMedDetails.setText(valueOrFallback(result.getDosage(), "Dosage not clearly visible"));
+                binding.textMedType.setText(valueOrFallback(result.getType(), "Type not clearly visible"));
+                binding.textMedUsage.setText(valueOrFallback(result.getUsage(), "Only clearly visible fields will prefill the form"));
                 if (result.getCapturedImage() != null) {
                     binding.imgScannedMed.setImageBitmap(result.getCapturedImage());
                 }
+                boolean canPrefill = result.hasMeaningfulPrefillData();
+                binding.btnAddSchedule.setEnabled(canPrefill);
+                binding.btnAddSchedule.setAlpha(canPrefill ? 1.0f : 0.5f);
                 setCameraControlsEnabled(false);
             } else {
                 binding.scanResultCard.setVisibility(View.GONE);
                 binding.resultBackdrop.setVisibility(View.GONE);
+                binding.btnAddSchedule.setEnabled(true);
+                binding.btnAddSchedule.setAlpha(1.0f);
                 setCameraControlsEnabled(true);
             }
         });
@@ -327,6 +343,10 @@ public class ScanFragment extends Fragment {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private String valueOrFallback(String value, String fallback) {
+        return (value == null || value.trim().isEmpty()) ? fallback : value;
     }
 
     @Override

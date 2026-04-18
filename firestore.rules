@@ -1,52 +1,87 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Users collection - owner access only
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    function isCommunityMember(targetUserId) {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(targetUserId)/community_members/$(request.auth.uid));
+    }
+
+    // Users collection
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // User can read/write their own profile
+      allow read, write: if isOwner(userId);
 
-      // Medications - owner only
+      // Medications sub-collection
       match /medications/{medicationId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if isOwner(userId);
       }
 
-      // Schedules - owner only
+      // Schedules sub-collection
       match /schedules/{scheduleId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if isOwner(userId);
       }
 
-      // Adherence logs - owner only
+      // Adherence logs sub-collection
       match /adherence_logs/{logId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if isOwner(userId);
       }
 
-      // Daily adherence - any authenticated user can read (Community needs this),
-      // owner can write from client side.
-      // Cloud Functions use Admin SDK which bypasses these rules.
+      // Daily adherence summary
+      // Owner: full access
+      // Connected community members: read-only
       match /daily_adherence/{dateId} {
-        allow read: if request.auth != null;
-        allow write: if request.auth != null && request.auth.uid == userId;
+        allow read: if isOwner(userId) || isCommunityMember(userId);
+        allow write: if isOwner(userId);
       }
 
-      // Community members - owner and the member themselves can read/write
+      // Community members sub-collection
+      // Only the owner may manage their own community member metadata
       match /community_members/{memberId} {
-        allow read, write: if request.auth != null
-          && (request.auth.uid == userId || request.auth.uid == memberId);
+        allow read, write: if isOwner(userId);
       }
     }
 
-    // Friend requests - participants can read; sender can create; both can update
+    // Friend requests collection
     match /friend_requests/{requestId} {
-      allow read: if request.auth != null
-        && (request.auth.uid == resource.data.senderId
-            || request.auth.uid == resource.data.receiverId);
-      allow create: if request.auth != null
-        && request.auth.uid == request.resource.data.senderId;
-      allow update: if request.auth != null
-        && (request.auth.uid == resource.data.senderId
-            || request.auth.uid == resource.data.receiverId);
+      // Allow read if you are the sender or receiver
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.fromUid ||
+        request.auth.uid == resource.data.toUid
+      );
+
+      // Allow create if you are the sender
+      allow create: if isAuthenticated() &&
+        request.auth.uid == request.resource.data.fromUid &&
+        request.resource.data.status == "pending";
+
+      // Allow update if you are the receiver (accept/ignore)
+      // or the sender (cancel)
+      allow update: if isAuthenticated() && (
+        request.auth.uid == resource.data.toUid ||
+        request.auth.uid == resource.data.fromUid
+      );
+
+      // Only receiver or sender can delete
+      allow delete: if isAuthenticated() && (
+        request.auth.uid == resource.data.fromUid ||
+        request.auth.uid == resource.data.toUid
+      );
+    }
+
+    // Shareable ID counter
+    // Used during registration to generate unique shareable IDs
+    match /counters/{counterId} {
+      allow read, write: if isAuthenticated();
     }
   }
 }

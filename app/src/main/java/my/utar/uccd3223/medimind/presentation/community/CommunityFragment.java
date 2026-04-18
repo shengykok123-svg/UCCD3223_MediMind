@@ -72,8 +72,8 @@ public class CommunityFragment extends Fragment {
         setupNotificationBadge();
         observeViewModel();
 
-        // Sync own adherence data
-        viewModel.loadMemberAdherence();
+        // Initial refresh
+        viewModel.refreshCommunityData();
     }
 
     // ─── RecyclerView Setup ──────────────────────────────────────
@@ -266,6 +266,9 @@ public class CommunityFragment extends Fragment {
         dialog.setContentView(R.layout.dialog_member_detail);
 
         ImageButton btnClose = dialog.findViewById(R.id.btn_close);
+        ImageButton btnEditTitle = dialog.findViewById(R.id.btn_edit_title);
+        View nicknameRow = dialog.findViewById(R.id.nickname_row);
+        TextView textCurrentNickname = dialog.findViewById(R.id.text_current_nickname);
         TextView textTitle = dialog.findViewById(R.id.text_title);
         TextView textSummaryTaken = dialog.findViewById(R.id.text_summary_taken);
         TextView textSummaryPending = dialog.findViewById(R.id.text_summary_pending);
@@ -273,12 +276,22 @@ public class CommunityFragment extends Fragment {
         TextView textEmpty = dialog.findViewById(R.id.text_empty);
         RecyclerView recyclerMedications = dialog.findViewById(R.id.recycler_medications);
 
-        String name = member.getName() != null ? member.getName() : "";
-        textTitle.setText(getString(R.string.member_medications, name));
+        String displayName = member.getCustomTitle() != null && !member.getCustomTitle().trim().isEmpty()
+                ? member.getCustomTitle().trim()
+                : (member.getName() != null ? member.getName() : "");
+        textTitle.setText(getString(R.string.member_medications, displayName));
 
         recyclerMedications.setLayoutManager(new LinearLayoutManager(requireContext()));
 
         btnClose.setOnClickListener(v -> dialog.dismiss());
+        if (!member.isSelf()) {
+            nicknameRow.setVisibility(View.VISIBLE);
+            String nickname = member.getCustomTitle() != null && !member.getCustomTitle().trim().isEmpty()
+                    ? member.getCustomTitle().trim()
+                    : (member.getName() != null ? member.getName() : "");
+            textCurrentNickname.setText(nickname);
+            btnEditTitle.setOnClickListener(v -> showEditMemberTitleDialog(member));
+        }
 
         final ListenerRegistration medicationListener = viewModel.observeMemberMedications(
                 member.getUid(),
@@ -318,6 +331,26 @@ public class CommunityFragment extends Fragment {
 
         dialog.setOnDismissListener(d -> medicationListener.remove());
         dialog.show();
+    }
+
+    private void showEditMemberTitleDialog(CommunityMember member) {
+        EditText input = new EditText(requireContext());
+        input.setHint("Custom title");
+        input.setText(member.getCustomTitle() != null ? member.getCustomTitle() : "");
+
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle("Edit member title")
+                .setView(input)
+                .setPositiveButton("Save", (dialog, which) ->
+                        viewModel.updateMemberCustomTitle(member.getUid(), input.getText().toString()))
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        viewModel.refreshCommunityData();
     }
 
     // ─── Inner Adapter for Medication Detail ─────────────────────

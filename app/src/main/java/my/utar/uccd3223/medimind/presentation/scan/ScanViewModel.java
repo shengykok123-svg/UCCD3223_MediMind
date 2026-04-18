@@ -42,12 +42,25 @@ public class ScanViewModel extends ViewModel {
 
         Content.Builder sysBuilder = new Content.Builder();
         sysBuilder.addText("You are a medication identification assistant. "
-                + "When given an image of a medication (pill, tablet, capsule, bottle, packaging, etc.), "
-                + "identify it and respond ONLY with a JSON object in this exact format:\n"
-                + "{\"name\": \"medication name\", \"dosage\": \"dosage info\", \"type\": \"medication type\", \"usage\": \"brief usage instructions\"}\n"
-                + "If you cannot identify the medication, still respond with the JSON format using your best guess "
-                + "or \"Unknown\" for fields you cannot determine. "
-                + "Do NOT include any text outside the JSON object. Do NOT use markdown code fences.");
+                + "Extract only information that is clearly visible on the medication image or packaging. "
+                + "Do not guess, infer brand details from weak evidence, or invent missing values. "
+                + "Return ONLY a single JSON object with exactly these keys:\n"
+                + "{\"medicationName\":string|null,"
+                + "\"dosage\":string|null,"
+                + "\"frequencyDoses\":number|null,"
+                + "\"frequencyDays\":number|null,"
+                + "\"mealInstructions\":string|null,"
+                + "\"type\":string|null,"
+                + "\"usage\":string|null}\n"
+                + "Field rules:\n"
+                + "- medicationName: short medicine/product name only.\n"
+                + "- dosage: short strength or dosage form only, e.g. \"500 mg\", \"1 tablet\", \"250 mg/5 mL\".\n"
+                + "- frequencyDoses and frequencyDays: only when explicitly shown or clearly stated on the packaging.\n"
+                + "- mealInstructions: only one of \"Before Meal\", \"During Meal\", \"After Meal\", \"Before Sleep\", \"As Needed\" when clearly supported.\n"
+                + "- type: short category only, e.g. \"Tablet\", \"Capsule\", \"Syrup\".\n"
+                + "- usage: one short line only if clearly visible; otherwise null.\n"
+                + "- If a field is absent or unclear, use null.\n"
+                + "- Do not output markdown, prose, explanations, placeholders, or values like \"Unknown\".");
         Content systemInstruction = sysBuilder.build();
 
         GenerativeModel gm = new GenerativeModel(
@@ -92,7 +105,8 @@ public class ScanViewModel extends ViewModel {
         Content.Builder contentBuilder = new Content.Builder();
         contentBuilder.setRole("user");
         contentBuilder.addImage(bitmap);
-        contentBuilder.addText("Identify this medication and provide its name, dosage, type, and usage instructions in JSON format.");
+        contentBuilder.addText("Extract medication fields for the existing Add Medication form. "
+                + "Use null for anything absent or unclear. Keep every returned value concise.");
         Content content = contentBuilder.build();
 
         ListenableFuture<GenerateContentResponse> future = model.generateContent(content);
@@ -123,8 +137,37 @@ public class ScanViewModel extends ViewModel {
     }
 
     private ScanResult parseGeminiResponse(String response, Bitmap bitmap) {
-        // Strip markdown code fences if present
-        String cleaned = response;
+        String cleaned = extractJsonObject(response);
+
+        try {
+            JSONObject json = new JSONObject(cleaned);
+            String name = sanitizeShortText(json.opt("medicationName"), 80);
+            String dosage = sanitizeShortText(json.opt("dosage"), 60);
+            String frequencyDoses = sanitizePositiveIntegerString(json.opt("frequencyDoses"));
+            String frequencyDays = sanitizePositiveIntegerString(json.opt("frequencyDays"));
+            String mealInstructions = sanitizeMealInstruction(json.opt("mealInstructions"));
+            String type = sanitizeShortText(json.opt("type"), 40);
+            String usage = sanitizeShortText(json.opt("usage"), 100);
+
+            return new ScanResult(
+                    name,
+                    dosage,
+                    frequencyDoses,
+                    frequencyDays,
+                    mealInstructions,
+                    type,
+                    usage,
+                    bitmap
+            );
+        } catch (Exception e) {
+            return new ScanResult(null, null, null, null, null, null, null, bitmap);
+        }
+    }
+
+    private String extractJsonObject(String response) {
+        if (response == null) return "{}";
+
+        String cleaned = response.trim();
         if (cleaned.startsWith("```json")) {
             cleaned = cleaned.substring(7);
         } else if (cleaned.startsWith("```")) {
@@ -135,16 +178,74 @@ public class ScanViewModel extends ViewModel {
         }
         cleaned = cleaned.trim();
 
+        int start = cleaned.indexOf('{');
+        int end = cleaned.lastIndexOf('}');
+        if (start >= 0 && end > start) {
+            return cleaned.substring(start, end + 1);
+        }
+        return "{}";
+    }
+
+    private String sanitizeShortText(Object rawValue, int maxLength) {
+        if (rawValue == null || rawValue == JSONObject.NULL) return null;
+
+        String value = String.valueOf(rawValue).trim();
+        if (value.isEmpty()) return null;
+
+        String normalized = value.toLowerCase();
+        if (normalized.equals("null")
+                || normalized.equals("unknown")
+                || normalized.equals("n/a")
+                || normalized.equals("na")
+                || normalized.equals("not visible")
+                || normalized.equals("not provided")
+                || normalized.equals("not sure")
+                || normalized.equals("unclear")) {
+            return null;
+        }
+
+        value = value.replaceAll("\\s+", " ").trim();
+        if (value.length() > maxLength) {
+            value = value.substring(0, maxLength).trim();
+        }
+        return value.isEmpty() ? null : value;
+    }
+
+    private String sanitizePositiveIntegerString(Object rawValue) {
+        if (rawValue == null || rawValue == JSONObject.NULL) return null;
+
         try {
-            JSONObject json = new JSONObject(cleaned);
-            String name = json.optString("name", "Unknown Medication");
-            String dosage = json.optString("dosage", "Unknown");
-            String type = json.optString("type", "Unknown");
-            String usage = json.optString("usage", "Consult your healthcare provider");
-            return new ScanResult(name, dosage, type, usage, bitmap);
+            if (rawValue instanceof Number) {
+                int value = ((Number) rawValue).intValue();
+                return value > 0 ? String.valueOf(value) : null;
+            }
+
+            String text = String.valueOf(rawValue).trim();
+            if (text.isEmpty()) return null;
+            int value = Integer.parseInt(text);
+            return value > 0 ? String.valueOf(value) : null;
         } catch (Exception e) {
-            return new ScanResult("Unknown Medication", "Unknown", "Unknown",
-                    "Could not parse details. Please try again.", bitmap);
+            return null;
+        }
+    }
+
+    private String sanitizeMealInstruction(Object rawValue) {
+        String value = sanitizeShortText(rawValue, 30);
+        if (value == null) return null;
+
+        switch (value.toLowerCase()) {
+            case "before meal":
+                return "Before Meal";
+            case "during meal":
+                return "During Meal";
+            case "after meal":
+                return "After Meal";
+            case "before sleep":
+                return "Before Sleep";
+            case "as needed":
+                return "As Needed";
+            default:
+                return null;
         }
     }
 

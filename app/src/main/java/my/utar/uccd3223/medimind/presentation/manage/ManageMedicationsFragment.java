@@ -47,6 +47,7 @@ import my.utar.uccd3223.medimind.R;
 import my.utar.uccd3223.medimind.data.local.database.entities.Medication;
 import my.utar.uccd3223.medimind.data.local.database.entities.Schedule;
 import my.utar.uccd3223.medimind.databinding.FragmentManageMedicationsBinding;
+import my.utar.uccd3223.medimind.util.MedicationImageUtils;
 
 @AndroidEntryPoint
 public class ManageMedicationsFragment extends Fragment {
@@ -101,9 +102,16 @@ public class ManageMedicationsFragment extends Fragment {
         if (getArguments() != null) {
             String scannedName = getArguments().getString("scanned_med_name");
             String scannedDosage = getArguments().getString("scanned_med_dosage");
+            String scannedFrequencyDoses = getArguments().getString("scanned_med_frequency_doses");
+            String scannedFrequencyDays = getArguments().getString("scanned_med_frequency_days");
+            String scannedMealInstructions = getArguments().getString("scanned_med_meal_instructions");
             String scannedImage = getArguments().getString("scanned_med_image");
-            if (scannedName != null) {
-                showAddMedicationDialog(scannedName, scannedDosage, scannedImage);
+            if (scannedName != null || scannedDosage != null
+                    || scannedFrequencyDoses != null || scannedFrequencyDays != null
+                    || scannedMealInstructions != null || scannedImage != null) {
+                showAddMedicationDialog(scannedName, scannedDosage,
+                        scannedFrequencyDoses, scannedFrequencyDays,
+                        scannedMealInstructions, scannedImage);
                 setArguments(null);
             }
         }
@@ -149,10 +157,12 @@ public class ManageMedicationsFragment extends Fragment {
 
     // ─── Add Medication Dialog ──────────────────────────────────────────
     private void showAddMedicationDialog() {
-        showAddMedicationDialog(null, null, null);
+        showAddMedicationDialog(null, null, null, null, null, null);
     }
 
-    private void showAddMedicationDialog(String preFillName, String preFillDosage, String preFillImagePath) {
+    private void showAddMedicationDialog(String preFillName, String preFillDosage,
+                                         String preFillFrequencyDoses, String preFillFrequencyDays,
+                                         String preFillMealInstructions, String preFillImagePath) {
         selectedImageUri = null;
 
         Dialog dialog = new Dialog(requireContext());
@@ -192,10 +202,21 @@ public class ManageMedicationsFragment extends Fragment {
         if (preFillDosage != null) {
             dosageInput.setText(preFillDosage);
         }
+        if (preFillFrequencyDoses != null && !preFillFrequencyDoses.trim().isEmpty()) {
+            freqDosesInput.setText(preFillFrequencyDoses.trim());
+        }
+        if (preFillFrequencyDays != null && !preFillFrequencyDays.trim().isEmpty()) {
+            freqDaysInput.setText(preFillFrequencyDays.trim());
+        }
+        applyMealInstructionPrefill(mealSpinner, preFillMealInstructions);
         if (preFillImagePath != null) {
             selectedImageUri = Uri.fromFile(new File(preFillImagePath));
-            imagePreview.setPadding(0, 0, 0, 0);
-            imagePreview.setImageURI(selectedImageUri);
+            MedicationImageUtils.loadMedicationImage(imagePreview, selectedImageUri.toString());
+        } else {
+            MedicationImageUtils.loadMedicationImage(
+                    imagePreview,
+                    MedicationImageUtils.getDefaultMedicationImageUri(requireContext())
+            );
         }
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
@@ -213,6 +234,8 @@ public class ManageMedicationsFragment extends Fragment {
         };
         freqDosesInput.addTextChangedListener(freqWatcher);
         freqDaysInput.addTextChangedListener(freqWatcher);
+        updateFrequencyLabel(freqDosesInput, freqDaysInput, freqLabel);
+        updateTimeFieldsVisibility(freqDosesInput, timeInput2, timeInput3);
 
         // Time pickers for all 3 time fields
         setupTimePickerClickListener(timeInput1);
@@ -253,7 +276,9 @@ public class ManageMedicationsFragment extends Fragment {
 
             List<String> times = collectTimes(visibleTimeInputs);
 
-            String imageUrl = (selectedImageUri != null) ? selectedImageUri.toString() : null;
+            String imageUrl = (selectedImageUri != null)
+                    ? selectedImageUri.toString()
+                    : MedicationImageUtils.getDefaultMedicationImageUri(requireContext());
 
             viewModel.addMedicationWithSchedule(
                     name, dosage, frequency, times,
@@ -345,12 +370,12 @@ public class ManageMedicationsFragment extends Fragment {
 
                 // Show existing image
                 if (med.getImageUrl() != null && !med.getImageUrl().isEmpty()) {
-                    try {
-                        imagePreview.setPadding(0, 0, 0, 0);
-                        imagePreview.setImageURI(Uri.parse(med.getImageUrl()));
-                    } catch (Exception e) {
-                        imagePreview.setImageResource(R.drawable.ic_default_medication);
-                    }
+                    MedicationImageUtils.loadMedicationImage(imagePreview, med.getImageUrl());
+                } else {
+                    MedicationImageUtils.loadMedicationImage(
+                            imagePreview,
+                            MedicationImageUtils.getDefaultMedicationImageUri(requireContext())
+                    );
                 }
 
                 // Update frequency label
@@ -409,7 +434,11 @@ public class ManageMedicationsFragment extends Fragment {
                     med.setStartDate(startDate);
                     med.setEndDate(endDate.isEmpty() ? null : endDate);
 
-                    String imageUrl = (selectedImageUri != null) ? selectedImageUri.toString() : med.getImageUrl();
+                    String imageUrl = (selectedImageUri != null)
+                            ? selectedImageUri.toString()
+                            : (med.getImageUrl() != null && !med.getImageUrl().isEmpty()
+                                ? med.getImageUrl()
+                                : MedicationImageUtils.getDefaultMedicationImageUri(requireContext()));
                     med.setImageUrl(imageUrl);
 
                     // Create new schedule objects for each time
@@ -614,6 +643,19 @@ public class ManageMedicationsFragment extends Fragment {
         else text = "= " + doses + " time(s) per " + days + " day(s)";
 
         label.setText(text);
+    }
+
+    private void applyMealInstructionPrefill(Spinner spinner, String mealInstruction) {
+        if (spinner == null || mealInstruction == null || mealInstruction.trim().isEmpty()) return;
+
+        String normalized = mealInstruction.trim();
+        String[] options = getResources().getStringArray(R.array.meal_instructions_array);
+        for (int i = 0; i < options.length; i++) {
+            if (options[i].equalsIgnoreCase(normalized)) {
+                spinner.setSelection(i);
+                return;
+            }
+        }
     }
 
     private String copyImageToInternalStorage(Uri sourceUri) {

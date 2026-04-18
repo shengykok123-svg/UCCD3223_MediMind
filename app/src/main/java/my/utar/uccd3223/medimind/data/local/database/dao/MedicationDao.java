@@ -44,4 +44,15 @@ public interface MedicationDao {
 
     @Query("SELECT * FROM medications")
     List<Medication> getAllMedicationsSync();
+
+    @Query("SELECT * FROM medications m " +
+           "WHERE m.isDeleted = 0 AND EXISTS (" +
+           "  SELECT 1 FROM schedules s " +
+           "  WHERE s.medicationId = m.id AND (" +
+           "    s.isActive = 1 OR (m.endDate IS NOT NULL AND m.endDate < :today)" +
+           "  )" +
+           ") " +
+           "ORDER BY CASE WHEN m.endDate IS NOT NULL AND m.endDate < :today THEN 1 ELSE 0 END ASC, " +
+           "m.name ASC, m.endDate ASC")
+    List<Medication> getReportFilterMedicationsSync(String today);
 }

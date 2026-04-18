@@ -263,6 +263,23 @@ export async function writeAdherenceResult(
 }
 
 /**
+ * Delete a computed daily adherence document when no doses apply anymore.
+ * This prevents stale Community data after same-day medication/schedule edits.
+ */
+export async function deleteAdherenceResult(
+  firestore: admin.firestore.Firestore,
+  uid: string,
+  date: string
+): Promise<void> {
+  await firestore
+    .collection("users")
+    .doc(uid)
+    .collection("daily_adherence")
+    .doc(date)
+    .delete();
+}
+
+/**
  * Get all user IDs from the users collection
  */
 export async function getAllUserIds(

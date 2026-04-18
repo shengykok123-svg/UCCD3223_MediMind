@@ -1,7 +1,6 @@
 package my.utar.uccd3223.medimind.presentation.home;
 
 import android.graphics.drawable.Drawable;
-import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import my.utar.uccd3223.medimind.R;
 import my.utar.uccd3223.medimind.data.local.database.entities.MedicationScheduleItem;
 import my.utar.uccd3223.medimind.databinding.ItemMedicationBinding;
+import my.utar.uccd3223.medimind.util.MedicationImageUtils;
 
 public class MedicationAdapter extends ListAdapter<MedicationScheduleItem, MedicationAdapter.ViewHolder> {
 
@@ -66,6 +66,8 @@ public class MedicationAdapter extends ListAdapter<MedicationScheduleItem, Medic
                                                   @NonNull MedicationScheduleItem newItem) {
                     return oldItem.getName().equals(newItem.getName())
                             && oldItem.getDosage().equals(newItem.getDosage())
+                            && String.valueOf(oldItem.getTakenDateTime())
+                                .equals(String.valueOf(newItem.getTakenDateTime()))
                             && String.valueOf(oldItem.getTodayStatus())
                                 .equals(String.valueOf(newItem.getTodayStatus()));
                 }
@@ -109,22 +111,23 @@ public class MedicationAdapter extends ListAdapter<MedicationScheduleItem, Medic
             }
             binding.textDosage.setText(dosageText);
 
-            // Medication image
-            float density = itemView.getContext().getResources().getDisplayMetrics().density;
-            if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
-                try {
-                    binding.imgMedication.setPadding(0, 0, 0, 0);
-                    binding.imgMedication.setImageURI(Uri.parse(item.getImageUrl()));
-                } catch (Exception e) {
-                    int pad = (int) (8 * density);
-                    binding.imgMedication.setPadding(pad, pad, pad, pad);
-                    binding.imgMedication.setImageResource(R.drawable.ic_default_medication);
+            if (item.isTaken()) {
+                String takenDisplay = formatTakenTime(item.getTakenDateTime());
+                if (takenDisplay != null) {
+                    binding.textTakenTime.setVisibility(View.VISIBLE);
+                    binding.textTakenTime.setText("Taken at " + takenDisplay);
+                } else {
+                    binding.textTakenTime.setVisibility(View.GONE);
+                    binding.textTakenTime.setText(null);
                 }
             } else {
-                int pad = (int) (8 * density);
-                binding.imgMedication.setPadding(pad, pad, pad, pad);
-                binding.imgMedication.setImageResource(R.drawable.ic_default_medication);
+                binding.textTakenTime.setVisibility(View.GONE);
+                binding.textTakenTime.setText(null);
             }
+
+            // Medication image
+            float density = itemView.getContext().getResources().getDisplayMetrics().density;
+            MedicationImageUtils.loadMedicationImage(binding.imgMedication, item.getImageUrl());
 
             // Timeline dot, card background, button state, and warning compound drawable
             boolean isTaken = item.isTaken();
@@ -236,6 +239,23 @@ public class MedicationAdapter extends ListAdapter<MedicationScheduleItem, Medic
                     aiListener.onAiClick(item);
                 }
             });
+        }
+
+        private String formatTakenTime(String takenDateTime) {
+            if (takenDateTime == null || takenDateTime.isEmpty()) return null;
+            try {
+                String timePart = takenDateTime.contains(" ")
+                        ? takenDateTime.split(" ")[1] : takenDateTime;
+                String[] parts = timePart.split(":");
+                int hour = Integer.parseInt(parts[0]);
+                int minute = Integer.parseInt(parts[1]);
+                String amPm = hour >= 12 ? "PM" : "AM";
+                int displayHour = hour % 12;
+                if (displayHour == 0) displayHour = 12;
+                return String.format("%d:%02d %s", displayHour, minute, amPm);
+            } catch (Exception e) {
+                return null;
+            }
         }
     }
 }

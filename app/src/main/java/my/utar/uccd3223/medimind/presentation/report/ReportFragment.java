@@ -56,16 +56,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.inject.Inject;
+
 import dagger.hilt.android.AndroidEntryPoint;
 import my.utar.uccd3223.medimind.R;
 import my.utar.uccd3223.medimind.data.local.database.entities.Medication;
+import my.utar.uccd3223.medimind.data.repository.MedicationRepositoryImpl;
 import my.utar.uccd3223.medimind.databinding.FragmentReportBinding;
+import my.utar.uccd3223.medimind.domain.repository.MedicationRepository;
 
 @AndroidEntryPoint
 public class ReportFragment extends Fragment {
 
     private FragmentReportBinding binding;
     private ReportViewModel viewModel;
+    @Inject MedicationRepository repository;
 
     private List<Medication> currentMedications = new ArrayList<>();
     private boolean[] currentFilterChecked = new boolean[0];
@@ -386,8 +391,7 @@ public class ReportFragment extends Fragment {
 
         viewModel.getAllMedications().observe(getViewLifecycleOwner(), meds -> {
             currentMedications = meds != null ? meds : new ArrayList<>();
-            currentFilterChecked = new boolean[currentMedications.size()];
-            Arrays.fill(currentFilterChecked, true);
+            syncFilterCheckedState();
             populateFilterChips(currentMedications);
         });
 
@@ -409,8 +413,19 @@ public class ReportFragment extends Fragment {
         });
 
         viewModel.getSelectedMedicationIds().observe(getViewLifecycleOwner(), ids -> {
+            syncFilterCheckedState();
             populateFilterChips(currentMedications);
         });
+    }
+
+    private void syncFilterCheckedState() {
+        currentFilterChecked = new boolean[currentMedications.size()];
+        Set<Long> selectedIds = viewModel.getSelectedMedicationIds().getValue();
+        boolean allSelected = (selectedIds == null || selectedIds.isEmpty());
+
+        for (int i = 0; i < currentMedications.size(); i++) {
+            currentFilterChecked[i] = allSelected || selectedIds.contains(currentMedications.get(i).getId());
+        }
     }
 
     private void populateFilterChips(List<Medication> medications) {
@@ -701,8 +716,14 @@ public class ReportFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        viewModel.loadMedications();
-        viewModel.loadReportData();
+        if (repository instanceof MedicationRepositoryImpl) {
+            ((MedicationRepositoryImpl) repository).syncFromFirestore(
+                    viewModel::refreshPageData,
+                    viewModel::refreshPageData
+            );
+        } else {
+            viewModel.refreshPageData();
+        }
     }
 
     @Override

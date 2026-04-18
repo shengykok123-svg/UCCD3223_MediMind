@@ -145,17 +145,20 @@ public class MedicationRepositoryImpl implements MedicationRepository {
                 String dateEnd = dateStr + " 23:59";
                 int takenCount = 0;
                 int missedCount = 0;
+                List<AdherenceLog> selectedDateLogs = adherenceDao.getLogsBetweenDatesSync(dateStart, dateEnd);
 
                 boolean isToday = dateStr.equals(LocalDate.now().toString());
                 boolean isPast = LocalDate.parse(dateStr).isBefore(LocalDate.now());
 
                 for (MedicationScheduleItem item : filtered) {
+                    item.setTakenDateTime(null);
                     String status = adherenceDao.getStatusForScheduleOnDate(
                             item.getId(), item.getScheduleId(), dateStart, dateEnd);
                     if (status != null) {
                         item.setTodayStatus(status);
                         if ("TAKEN".equals(status)) {
                             takenCount++;
+                            item.setTakenDateTime(findTakenTime(selectedDateLogs, item.getId(), item.getScheduleId()));
                         }
                     } else {
                         item.setTodayStatus("PENDING");

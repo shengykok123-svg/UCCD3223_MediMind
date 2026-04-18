@@ -153,6 +153,13 @@ public class ReportViewModel extends ViewModel {
         });
     }
 
+    public void refreshPageData() {
+        loadMedications();
+        loadEarliestDate();
+        loadUserProfile();
+        loadReportData();
+    }
+
     /**
      * Compute report statistics by iterating over each day in the range,
      * determining expected doses from schedules, and comparing against
@@ -214,18 +221,15 @@ public class ReportViewModel extends ViewModel {
         // Build lookup: "medicationId_scheduleId_yyyy-MM-dd" -> status
         Map<String, String> logLookup = new HashMap<>();
         for (AdherenceLog log : logs) {
-            String dt = log.getScheduledDateTime();
-            String dateOnly = dt;
-            if (dt != null && dt.contains(" ")) {
-                dateOnly = dt.substring(0, dt.indexOf(" "));
-            }
-            String key = log.getMedicationId() + "_" + log.getScheduleId() + "_" + dateOnly;
+            String dateOnly = extractDatePart(log.getScheduledDateTime());
+            String key = buildDoseKey(log.getMedicationId(), log.getScheduleId(), dateOnly);
             logLookup.put(key, log.getStatus());
         }
 
         // 4. Iterate through each day, compute expected doses vs actual
         int taken = 0, missed = 0, skipped = 0;
         Map<Long, int[]> medCounts = new HashMap<>(); // medId -> [taken, total]
+        Set<String> accountedDoseKeys = new HashSet<>();
 
         for (LocalDate day = startDate; !day.isAfter(endDate); day = day.plusDays(1)) {
             String dayStr = day.toString();
@@ -249,14 +253,11 @@ public class ReportViewModel extends ViewModel {
                 if (!medFilter.isEmpty() && !medFilter.contains(med.getId())) continue;
 
                 // This is an expected dose — check what happened
-                String key = med.getId() + "_" + schedule.getId() + "_" + dayStr;
+                String key = buildDoseKey(med.getId(), schedule.getId(), dayStr);
                 String status = logLookup.get(key);
+                accountedDoseKeys.add(key);
 
-                int[] counts = medCounts.get(med.getId());
-                if (counts == null) {
-                    counts = new int[]{0, 0};
-                    medCounts.put(med.getId(), counts);
-                }
+                int[] counts = getOrCreateMedicationCounts(medCounts, med.getId());
                 counts[1]++; // total expected
 
                 if ("TAKEN".equalsIgnoreCase(status)) {
@@ -281,6 +282,40 @@ public class ReportViewModel extends ViewModel {
             }
         }
 
+        // 4b. Preserve historical adherence logs even if the live schedule has been
+        // removed or remapped. This prevents report data from disappearing after
+        // schedule cleanup while avoiding double-counting schedule-backed doses.
+        for (AdherenceLog log : logs) {
+            String dayStr = extractDatePart(log.getScheduledDateTime());
+            if (dayStr == null || dayStr.isEmpty()) continue;
+
+            LocalDate logDate;
+            try {
+                logDate = LocalDate.parse(dayStr);
+            } catch (Exception e) {
+                continue;
+            }
+
+            if (logDate.isBefore(startDate) || logDate.isAfter(endDate)) continue;
+            if (!medFilter.isEmpty() && !medFilter.contains(log.getMedicationId())) continue;
+
+            String key = buildDoseKey(log.getMedicationId(), log.getScheduleId(), dayStr);
+            if (accountedDoseKeys.contains(key)) continue;
+
+            int[] counts = getOrCreateMedicationCounts(medCounts, log.getMedicationId());
+            counts[1]++;
+
+            String status = log.getStatus();
+            if ("TAKEN".equalsIgnoreCase(status)) {
+                taken++;
+                counts[0]++;
+            } else if ("SKIPPED".equalsIgnoreCase(status)) {
+                skipped++;
+            } else if ("MISSED".equalsIgnoreCase(status)) {
+                missed++;
+            }
+        }
+
         // 5. Build bar chart data
         List<MedicationBarData> barData = new ArrayList<>();
         for (Map.Entry<Long, int[]> entry : medCounts.entrySet()) {
@@ -299,6 +334,27 @@ public class ReportViewModel extends ViewModel {
         stats.percent = stats.total > 0 ? (taken * 100f / stats.total) : 0f;
         stats.barData = barData;
         return stats;
+    }
+
+    private String buildDoseKey(long medicationId, long scheduleId, String dateStr) {
+        return medicationId + "_" + scheduleId + "_" + dateStr;
+    }
+
+    private String extractDatePart(String scheduledDateTime) {
+        if (scheduledDateTime == null || scheduledDateTime.isEmpty()) return "";
+        if (scheduledDateTime.contains(" ")) {
+            return scheduledDateTime.substring(0, scheduledDateTime.indexOf(" "));
+        }
+        return scheduledDateTime;
+    }
+
+    private int[] getOrCreateMedicationCounts(Map<Long, int[]> medCounts, long medicationId) {
+        int[] counts = medCounts.get(medicationId);
+        if (counts == null) {
+            counts = new int[]{0, 0};
+            medCounts.put(medicationId, counts);
+        }
+        return counts;
     }
 
     /**
@@ -369,17 +425,9 @@ public class ReportViewModel extends ViewModel {
 
     public void loadMedications() {
         executor.execute(() -> {
-            List<Medication> meds = medicationDao.getAllMedicationsSync();
-            // Filter out soft-deleted meds from the filter chip UI
-            List<Medication> activeMeds = new ArrayList<>();
-            if (meds != null) {
-                for (Medication med : meds) {
-                    if (!med.isDeleted()) {
-                        activeMeds.add(med);
-                    }
-                }
-            }
-            allMedications.postValue(activeMeds);
+            String today = LocalDate.now().toString();
+            List<Medication> meds = medicationDao.getReportFilterMedicationsSync(today);
+            allMedications.postValue(meds != null ? meds : new ArrayList<>());
         });
     }
 

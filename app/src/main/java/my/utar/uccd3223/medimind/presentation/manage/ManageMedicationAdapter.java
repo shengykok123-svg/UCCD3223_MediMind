@@ -1,6 +1,5 @@
 package my.utar.uccd3223.medimind.presentation.manage;
 
-import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
@@ -14,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import my.utar.uccd3223.medimind.R;
 import my.utar.uccd3223.medimind.data.local.database.entities.Medication;
 import my.utar.uccd3223.medimind.databinding.ItemManageMedicationBinding;
+import my.utar.uccd3223.medimind.util.MedicationImageUtils;
 
 public class ManageMedicationAdapter extends ListAdapter<Medication, ManageMedicationAdapter.ViewHolder> {
 
@@ -89,21 +89,7 @@ public class ManageMedicationAdapter extends ListAdapter<Medication, ManageMedic
             binding.textDateRange.setText(dateRange);
 
             // Medication image
-            float density = itemView.getContext().getResources().getDisplayMetrics().density;
-            if (medication.getImageUrl() != null && !medication.getImageUrl().isEmpty()) {
-                try {
-                    binding.imgMedication.setPadding(0, 0, 0, 0);
-                    binding.imgMedication.setImageURI(Uri.parse(medication.getImageUrl()));
-                } catch (Exception e) {
-                    int pad = (int) (8 * density);
-                    binding.imgMedication.setPadding(pad, pad, pad, pad);
-                    binding.imgMedication.setImageResource(R.drawable.ic_default_medication);
-                }
-            } else {
-                int pad = (int) (8 * density);
-                binding.imgMedication.setPadding(pad, pad, pad, pad);
-                binding.imgMedication.setImageResource(R.drawable.ic_default_medication);
-            }
+            MedicationImageUtils.loadMedicationImage(binding.imgMedication, medication.getImageUrl());
 
             // Expired card styling
             boolean isExpired = false;

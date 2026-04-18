@@ -1,5 +1,7 @@
 package my.utar.uccd3223.medimind.data.local.database.entities;
 
+import androidx.room.Ignore;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -30,7 +32,10 @@ public class MedicationScheduleItem {
     private String instructions;  // "After Meal", "Before Sleep"
 
     // Adherence status for today (set in code, not from query)
+    @Ignore
     private String todayStatus;   // TAKEN, MISSED, SKIPPED, PENDING, or null
+    @Ignore
+    private String takenDateTime; // actual recorded taken time for the selected date
 
     // Getters
     public long getId() { return id; }
@@ -48,6 +53,7 @@ public class MedicationScheduleItem {
     public String getDaysOfWeek() { return daysOfWeek; }
     public String getInstructions() { return instructions; }
     public String getTodayStatus() { return todayStatus; }
+    public String getTakenDateTime() { return takenDateTime; }
 
     // Setters
     public void setId(long id) { this.id = id; }
@@ -65,6 +71,7 @@ public class MedicationScheduleItem {
     public void setDaysOfWeek(String daysOfWeek) { this.daysOfWeek = daysOfWeek; }
     public void setInstructions(String instructions) { this.instructions = instructions; }
     public void setTodayStatus(String todayStatus) { this.todayStatus = todayStatus; }
+    public void setTakenDateTime(String takenDateTime) { this.takenDateTime = takenDateTime; }
 
     /**
      * Get formatted time display (e.g., "8:00 AM")
