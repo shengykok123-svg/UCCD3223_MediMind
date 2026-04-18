@@ -110,6 +110,8 @@
             android:inputType="textEmailAddress"
             android:paddingStart="20dp"
             android:paddingEnd="20dp"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_hint"
             android:textSize="16sp"
             android:autofillHints="emailAddress"
             app:layout_constraintEnd_toEndOf="parent"
@@ -149,6 +151,8 @@
                 android:paddingStart="20dp"
                 android:paddingEnd="48dp"
                 android:hint="@string/enter_password_hint"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_hint"
                 android:textSize="16sp"
                 android:autofillHints="password" />
 
@@ -178,16 +182,17 @@
             app:layout_constraintTop_toBottomOf="@id/password_container" />
 
         <!-- Login Button (full-width) -->
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_login"
             android:layout_width="0dp"
             android:layout_height="56dp"
             android:layout_marginTop="24dp"
-            android:background="@drawable/bg_rounded_button"
             android:text="@string/login"
             android:textColor="@color/on_primary"
             android:textSize="18sp"
             android:textStyle="bold"
+            app:backgroundTint="@color/primary"
+            app:cornerRadius="25dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/text_forgot_password" />

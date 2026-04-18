@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary Medical Teal Palette (lighter for dark backgrounds) -->
+    <color name="primary">#4DB6AC</color>
+    <color name="primary_dark">#00897B</color>
+    <color name="primary_light">#1A3C39</color>
+    <color name="primary_very_light">#1A2E2C</color>
+    <color name="on_primary">#FFFFFF</color>
+
+    <!-- Secondary Accent -->
+    <color name="accent">#FF8A65</color>
+    <color name="accent_dark">#FF7043</color>
+    <color name="accent_light">#3E2723</color>
+
+    <!-- Background & Surface -->
+    <color name="background">#121212</color>
+    <color name="surface">#1E1E1E</color>
+    <color name="surface_variant">#2C2C2C</color>
+
+    <!-- Status Colors (adjusted for dark backgrounds) -->
+    <color name="success">#66BB6A</color>
+    <color name="success_light">#1B3A1B</color>
+    <color name="warning">#FFCA28</color>
+    <color name="warning_light">#3A3018</color>
+    <color name="error">#EF5350</color>
+    <color name="error_pale">#E57373</color>
+    <color name="error_light">#3A1B1B</color>
+
+    <!-- Text Colors (light on dark) -->
+    <color name="text_primary">#E0E0E0</color>
+    <color name="text_secondary">#B0B0B0</color>
+    <color name="text_hint">#757575</color>
+    <color name="text_on_dark">#FFFFFF</color>
+
+    <!-- Security Banner -->
+    <color name="security_banner_bg">#1B3A1B</color>
+    <color name="security_banner_text">#81C784</color>
+    <color name="security_banner_border">#2E7D32</color>
+
+    <!-- Expired Card -->
+    <color name="expired_card_bg">#2C2C2C</color>
+
+    <!-- Divider & Border -->
+    <color name="divider">#3A3A3A</color>
+    <color name="border">#4A4A4A</color>
+    <color name="border_light">#3A3A3A</color>
+
+    <!-- Bottom Nav -->
+    <color name="nav_inactive">#757575</color>
+    <color name="nav_active">#4DB6AC</color>
+    <color name="nav_pill_border">#3A3A3A</color>
+
+    <!-- Calendar -->
+    <color name="calendar_selected_bg">#4DB6AC</color>
+    <color name="calendar_selected_text">#FFFFFF</color>
+    <color name="calendar_default_text">#E0E0E0</color>
+
+    <!-- Chat -->
+    <color name="chat_user_bubble">#00897B</color>
+    <color name="chat_ai_bubble">#2C2C2C</color>
+    <color name="chat_user_text">#FFFFFF</color>
+    <color name="chat_ai_text">#E0E0E0</color>
+
+    <!-- Notification Badge -->
+    <color name="badge_red">#EF5350</color>
+
+    <!-- Report Chart Colors -->
+    <color name="chart_bar">#4DB6AC</color>
+    <color name="chart_donut_filled">#4DB6AC</color>
+    <color name="chart_donut_empty">#3A3A3A</color>
+
+    <!-- Date Toggle -->
+    <color name="toggle_inactive_bg">#2C2C2C</color>
+    <color name="toggle_inactive_text">#B0B0B0</color>
+
+    <!-- Filter Chips -->
+    <color name="chip_active_bg">#2E7D32</color>
+    <color name="chip_border">#3A3A3A</color>
+    <color name="chip_more_bg">#2C2C2C</color>
+    <color name="chip_more_border">#4A4A4A</color>
+    <color name="chip_dot_1">#66BB6A</color>
+    <color name="chip_dot_2">#FFD54F</color>
+    <color name="chip_dot_3">#FF8A65</color>
+
+    <!-- Legacy (keep for compatibility) -->
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>

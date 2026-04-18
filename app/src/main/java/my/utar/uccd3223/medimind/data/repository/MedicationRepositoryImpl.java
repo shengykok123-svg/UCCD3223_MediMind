@@ -677,29 +677,72 @@ public class MedicationRepositoryImpl implements MedicationRepository {
         int pendingCount = totalCount - takenCount - missedCount;
         if (pendingCount < 0) pendingCount = 0;
 
+        // Fetch today's adherence logs to look up takenDateTime
+        String dateStart = dateStr + " 00:00";
+        String dateEnd = dateStr + " 23:59";
+        List<AdherenceLog> todayLogs = adherenceDao.getLogsBetweenDatesSync(dateStart, dateEnd);
+
         List<Map<String, Object>> medications = new ArrayList<>();
         for (MedicationScheduleItem item : items) {
             Map<String, Object> med = new HashMap<>();
+            // New field names
+            med.put("medicationName", item.getName());
+            med.put("scheduledTime", item.getTime() != null ? item.getTime() : "");
+            // Backwards compatibility field names
             med.put("name", item.getName());
-            med.put("dosage", item.getDosage() != null ? item.getDosage() : "");
             med.put("time", item.getTime() != null ? item.getTime() : "");
+            // Common fields
+            med.put("dosage", item.getDosage() != null ? item.getDosage() : "");
             med.put("status", item.getTodayStatus() != null ? item.getTodayStatus() : "PENDING");
             med.put("instructions", item.getInstructions() != null ? item.getInstructions() : "");
+            med.put("medicationFirestoreId", item.getFirestoreId() != null ? item.getFirestoreId() : "");
+            med.put("scheduleFirestoreId", item.getScheduleFirestoreId() != null ? item.getScheduleFirestoreId() : "");
+            med.put("finalized", false);
+            med.put("lastUpdatedAt", Timestamp.now());
+            med.put("updatedBy", "client");
+
+            // Look up takenTime from adherence logs
+            if ("TAKEN".equals(item.getTodayStatus())) {
+                String takenTime = findTakenTime(todayLogs, item.getId(), item.getScheduleId());
+                if (takenTime != null) {
+                    med.put("takenTime", takenTime);
+                }
+            }
+
             medications.add(med);
         }
 
+        double adherenceRate = totalCount > 0
+                ? Math.round((double) takenCount / totalCount * 100.0) / 100.0 : 0;
+
         Map<String, Object> data = new HashMap<>();
+        data.put("date", dateStr);
         data.put("takenCount", takenCount);
         data.put("missedCount", missedCount);
         data.put("pendingCount", pendingCount);
+        data.put("totalScheduled", totalCount);
         data.put("totalCount", totalCount);
         data.put("medications", medications);
+        data.put("adherenceRate", adherenceRate);
+        data.put("finalized", false);
+        data.put("lastComputedAt", Timestamp.now());
         data.put("lastUpdated", Timestamp.now());
+        data.put("computedBy", "client");
 
         firestore.collection("users").document(uid)
                 .collection("daily_adherence").document(dateStr)
                 .set(data)
                 .addOnFailureListener(e -> Log.e(TAG, "Failed to update daily_adherence", e));
+    }
+
+    private String findTakenTime(List<AdherenceLog> logs, long medicationId, long scheduleId) {
+        for (AdherenceLog log : logs) {
+            if (log.getMedicationId() == medicationId && log.getScheduleId() == scheduleId
+                    && "TAKEN".equals(log.getStatus()) && log.getTakenDateTime() != null) {
+                return log.getTakenDateTime();
+            }
+        }
+        return null;
     }
 
     // ─── Accessors ──────────────────────────────────────────────────

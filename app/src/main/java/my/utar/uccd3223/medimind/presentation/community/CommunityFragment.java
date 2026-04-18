@@ -357,11 +357,15 @@ public class CommunityFragment extends Fragment {
             }
 
             void bind(Map<String, Object> med) {
-                String name = (String) med.get("name");
+                // Read new field names with fallback to old names
+                String name = (String) med.get("medicationName");
+                if (name == null) name = (String) med.get("name");
                 String dosage = (String) med.get("dosage");
-                String time = (String) med.get("time");
+                String time = (String) med.get("scheduledTime");
+                if (time == null) time = (String) med.get("time");
                 String status = (String) med.get("status");
                 String instructions = (String) med.get("instructions");
+                String takenTime = (String) med.get("takenTime");
 
                 // Name + dosage
                 String nameText = name != null ? name : "";
@@ -379,7 +383,12 @@ public class CommunityFragment extends Fragment {
 
                 // Status styling
                 if ("TAKEN".equals(status)) {
-                    textMedStatus.setText(R.string.status_taken);
+                    String takenDisplay = formatTakenTime(takenTime);
+                    if (takenDisplay != null) {
+                        textMedStatus.setText("Taken at " + takenDisplay);
+                    } else {
+                        textMedStatus.setText(R.string.status_taken);
+                    }
                     textMedStatus.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.success));
                     statusDot.setBackgroundTintList(ContextCompat.getColorStateList(itemView.getContext(), R.color.success));
                 } else if ("MISSED".equals(status)) {
@@ -390,6 +399,25 @@ public class CommunityFragment extends Fragment {
                     textMedStatus.setText(R.string.status_pending);
                     textMedStatus.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.warning));
                     statusDot.setBackgroundTintList(ContextCompat.getColorStateList(itemView.getContext(), R.color.warning));
+                }
+            }
+
+            /** Parse "yyyy-MM-dd HH:mm:ss" → "h:mm a" format, or return null */
+            private String formatTakenTime(String takenDateTime) {
+                if (takenDateTime == null || takenDateTime.isEmpty()) return null;
+                try {
+                    // Extract time portion from "yyyy-MM-dd HH:mm:ss"
+                    String timePart = takenDateTime.contains(" ")
+                            ? takenDateTime.split(" ")[1] : takenDateTime;
+                    String[] parts = timePart.split(":");
+                    int hour = Integer.parseInt(parts[0]);
+                    int minute = Integer.parseInt(parts[1]);
+                    String amPm = hour >= 12 ? "PM" : "AM";
+                    int displayHour = hour % 12;
+                    if (displayHour == 0) displayHour = 12;
+                    return String.format("%d:%02d %s", displayHour, minute, amPm);
+                } catch (Exception e) {
+                    return null;
                 }
             }
 

@@ -96,6 +96,8 @@
             android:inputType="textPersonName"
             android:paddingStart="20dp"
             android:paddingEnd="20dp"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_hint"
             android:textSize="16sp"
             android:autofillHints="name"
             app:layout_constraintEnd_toEndOf="parent"
@@ -125,6 +127,8 @@
             android:inputType="textEmailAddress"
             android:paddingStart="20dp"
             android:paddingEnd="20dp"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_hint"
             android:textSize="16sp"
             android:autofillHints="emailAddress"
             app:layout_constraintEnd_toEndOf="parent"
@@ -162,6 +166,8 @@
                 android:inputType="textPassword"
                 android:paddingStart="20dp"
                 android:paddingEnd="48dp"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_hint"
                 android:textSize="16sp"
                 android:autofillHints="password" />
 
@@ -208,6 +214,8 @@
                 android:inputType="textPassword"
                 android:paddingStart="20dp"
                 android:paddingEnd="48dp"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_hint"
                 android:textSize="16sp"
                 android:autofillHints="password" />
 
@@ -242,7 +250,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text=" *"
-            android:textColor="#FF0000"
+            android:textColor="@color/error"
             android:textSize="16sp"
             android:textStyle="bold"
             app:layout_constraintStart_toEndOf="@id/label_gender"
@@ -279,7 +287,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text=" *"
-            android:textColor="#FF0000"
+            android:textColor="@color/error"
             android:textSize="16sp"
             android:textStyle="bold"
             app:layout_constraintStart_toEndOf="@id/label_dob"
@@ -296,6 +304,8 @@
             android:hint="@string/tap_to_select_dob"
             android:paddingStart="20dp"
             android:paddingEnd="20dp"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_hint"
             android:textSize="16sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -338,6 +348,8 @@
                     android:inputType="numberDecimal"
                     android:paddingStart="20dp"
                     android:paddingEnd="20dp"
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="@color/text_hint"
                     android:textSize="16sp" />
             </LinearLayout>
 
@@ -392,6 +404,8 @@
             android:inputType="text"
             android:paddingStart="20dp"
             android:paddingEnd="20dp"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_hint"
             android:textSize="16sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -443,16 +457,17 @@
             app:layout_constraintTop_toBottomOf="@id/security_banner" />
 
         <!-- Create Button (full-width) -->
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_create"
             android:layout_width="0dp"
             android:layout_height="56dp"
             android:layout_marginTop="20dp"
-            android:background="@drawable/bg_rounded_button"
             android:text="@string/create"
             android:textColor="@color/on_primary"
             android:textSize="18sp"
             android:textStyle="bold"
+            app:backgroundTint="@color/primary"
+            app:cornerRadius="25dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/checkbox_terms" />

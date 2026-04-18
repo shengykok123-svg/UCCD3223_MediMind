@@ -1,0 +1,19 @@
+[debug] [2026-04-06T11:07:23.971Z] ----------------------------------------------------------------------
+[debug] [2026-04-06T11:07:23.985Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Winson Kok\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js init firestore
+[debug] [2026-04-06T11:07:23.985Z] CLI Version:   15.13.0
+[debug] [2026-04-06T11:07:23.985Z] Platform:      win32
+[debug] [2026-04-06T11:07:23.986Z] Node Version:  v24.13.0
+[debug] [2026-04-06T11:07:23.986Z] Time:          Mon Apr 06 2026 19:07:23 GMT+0800 (Malaysia Time)
+[debug] [2026-04-06T11:07:23.986Z] ----------------------------------------------------------------------
+[debug] 
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  E:\Documents\UTAR\Degree\Degree Year 3\Degree Y3S2\UCCD3223 - MOBILE APPLICATIONS DEVELOPMENT\MediMind
+

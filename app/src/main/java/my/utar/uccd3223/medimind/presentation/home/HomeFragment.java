@@ -68,6 +68,16 @@ public class HomeFragment extends Fragment {
         setupHeader();
         setupWeekCalendar();
         setupRecyclerView();
+
+        // Pre-set date flags on new adapter before observers fire
+        String currentDate = viewModel.getSelectedDate().getValue();
+        if (currentDate != null) {
+            LocalDate selected = LocalDate.parse(currentDate);
+            LocalDate today = LocalDate.now();
+            adapter.setPastDate(selected.isBefore(today));
+            adapter.setFutureDate(selected.isAfter(today));
+        }
+
         setupObservers();
         setupButtons();
 

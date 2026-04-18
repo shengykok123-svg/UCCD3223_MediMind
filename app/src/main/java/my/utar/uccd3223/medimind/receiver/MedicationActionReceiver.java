@@ -251,24 +251,55 @@ public class MedicationActionReceiver extends BroadcastReceiver {
             int pendingCount = filtered.size() - takenCount - missedCount;
             if (pendingCount < 0) pendingCount = 0;
 
+            // Fetch today's adherence logs to look up takenDateTime
+            List<AdherenceLog> todayLogs = db.adherenceDao().getLogsBetweenDatesSync(dateStart, dateEnd);
+
             List<Map<String, Object>> medications = new java.util.ArrayList<>();
             for (MedicationScheduleItem item : filtered) {
                 Map<String, Object> med = new HashMap<>();
+                // New field names
+                med.put("medicationName", item.getName());
+                med.put("scheduledTime", item.getTime() != null ? item.getTime() : "");
+                // Backwards compatibility field names
                 med.put("name", item.getName());
-                med.put("dosage", item.getDosage() != null ? item.getDosage() : "");
                 med.put("time", item.getTime() != null ? item.getTime() : "");
+                // Common fields
+                med.put("dosage", item.getDosage() != null ? item.getDosage() : "");
                 med.put("status", item.getTodayStatus() != null ? item.getTodayStatus() : "PENDING");
                 med.put("instructions", item.getInstructions() != null ? item.getInstructions() : "");
+                med.put("medicationFirestoreId", item.getFirestoreId() != null ? item.getFirestoreId() : "");
+                med.put("scheduleFirestoreId", item.getScheduleFirestoreId() != null ? item.getScheduleFirestoreId() : "");
+                med.put("finalized", false);
+                med.put("lastUpdatedAt", com.google.firebase.Timestamp.now());
+                med.put("updatedBy", "client");
+
+                // Look up takenTime from adherence logs
+                if ("TAKEN".equals(item.getTodayStatus())) {
+                    String takenTime = findTakenTime(todayLogs, item.getId(), item.getScheduleId());
+                    if (takenTime != null) {
+                        med.put("takenTime", takenTime);
+                    }
+                }
+
                 medications.add(med);
             }
 
+            double adherenceRate = filtered.size() > 0
+                    ? Math.round((double) takenCount / filtered.size() * 100.0) / 100.0 : 0;
+
             Map<String, Object> data = new HashMap<>();
+            data.put("date", today);
             data.put("takenCount", takenCount);
             data.put("missedCount", missedCount);
             data.put("pendingCount", pendingCount);
+            data.put("totalScheduled", filtered.size());
             data.put("totalCount", filtered.size());
             data.put("medications", medications);
+            data.put("adherenceRate", adherenceRate);
+            data.put("finalized", false);
+            data.put("lastComputedAt", com.google.firebase.Timestamp.now());
             data.put("lastUpdated", com.google.firebase.Timestamp.now());
+            data.put("computedBy", "client");
 
             FirebaseFirestore.getInstance()
                     .collection("users").document(uid)
@@ -277,5 +308,15 @@ public class MedicationActionReceiver extends BroadcastReceiver {
         } catch (Exception e) {
             android.util.Log.e("MedicationActionReceiver", "updateDailyAdherenceSummary error", e);
         }
+    }
+
+    private String findTakenTime(List<AdherenceLog> logs, long medicationId, long scheduleId) {
+        for (AdherenceLog log : logs) {
+            if (log.getMedicationId() == medicationId && log.getScheduleId() == scheduleId
+                    && "TAKEN".equals(log.getStatus()) && log.getTakenDateTime() != null) {
+                return log.getTakenDateTime();
+            }
+        }
+        return null;
     }
 }

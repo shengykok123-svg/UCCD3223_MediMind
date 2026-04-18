@@ -25,11 +25,17 @@ public class MedicationAdapter extends ListAdapter<MedicationScheduleItem, Medic
     private boolean isFutureDate = false;
 
     public void setPastDate(boolean pastDate) {
-        this.isPastDate = pastDate;
+        if (this.isPastDate != pastDate) {
+            this.isPastDate = pastDate;
+            notifyDataSetChanged();
+        }
     }
 
     public void setFutureDate(boolean futureDate) {
-        this.isFutureDate = futureDate;
+        if (this.isFutureDate != futureDate) {
+            this.isFutureDate = futureDate;
+            notifyDataSetChanged();
+        }
     }
 
     public interface OnTakeClickListener {
@@ -125,6 +131,15 @@ public class MedicationAdapter extends ListAdapter<MedicationScheduleItem, Medic
             boolean isMissed = item.isMissed();
             boolean isSkipped = item.isSkipped();
             boolean isUpcoming = item.isUpcoming();
+
+            // Defensive: past-date items with non-final status must display as missed
+            if (isPastDate && !isTaken && !isMissed && !isSkipped) {
+                isMissed = true;
+            }
+            // Defensive: future-date items with non-final status must display as upcoming
+            if (isFutureDate && !isTaken && !isSkipped && !isMissed) {
+                isUpcoming = true;
+            }
 
             if (isTaken) {
                 binding.timelineDot.setBackgroundResource(R.drawable.bg_timeline_dot_filled);
