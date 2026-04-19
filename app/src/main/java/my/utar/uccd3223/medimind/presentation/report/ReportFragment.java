@@ -4,6 +4,7 @@ import android.app.Dialog;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.Intent;
+import android.content.pm.ResolveInfo;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
@@ -567,7 +568,7 @@ public class ReportFragment extends Fragment {
             nameText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
             nameText.setTextColor(isSelected
                     ? getResources().getColor(R.color.on_primary, null)
-                    : Color.parseColor("#1A1918"));
+                    : getResources().getColor(R.color.text_primary, null));
             nameText.setMaxLines(1);
             LinearLayout.LayoutParams nameParams = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -771,20 +772,25 @@ public class ReportFragment extends Fragment {
 
         Intent intent = new Intent(Intent.ACTION_SEND);
         intent.setType("application/pdf");
+        intent.setDataAndType(uri, "application/pdf");
         intent.putExtra(Intent.EXTRA_STREAM, uri);
         intent.setClipData(ClipData.newRawUri("", uri));
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-        // Pre-fill email from user profile
-        Map<String, String> profile = viewModel.getUserProfile().getValue();
-        if (profile != null && profile.get("email") != null) {
-            intent.putExtra(Intent.EXTRA_EMAIL, new String[]{profile.get("email")});
-        }
-
         intent.putExtra(Intent.EXTRA_SUBJECT,
                 "MediMind Health Report - " + LocalDate.now().format(DateTimeFormatter.ofPattern("MMM d, yyyy")));
+        intent.putExtra(Intent.EXTRA_TEXT, getString(R.string.share_report));
 
         try {
+            List<ResolveInfo> resolvedActivities = requireContext()
+                    .getPackageManager()
+                    .queryIntentActivities(intent, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY);
+            for (ResolveInfo resolveInfo : resolvedActivities) {
+                requireContext().grantUriPermission(
+                        resolveInfo.activityInfo.packageName,
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                );
+            }
             Intent chooser = Intent.createChooser(intent, getString(R.string.share_report));
             chooser.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             startActivity(chooser);

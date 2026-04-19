@@ -278,7 +278,10 @@ public class ReportPdfGenerator {
 
         // Save to cache
         String fileName = "MediMind_Report_" + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) + ".pdf";
-        File reportsDir = new File(context.getCacheDir(), "reports");
+        File baseCacheDir = context.getExternalCacheDir() != null
+                ? context.getExternalCacheDir()
+                : context.getCacheDir();
+        File reportsDir = new File(baseCacheDir, "reports");
         if (!reportsDir.exists()) reportsDir.mkdirs();
         File file = new File(reportsDir, fileName);
         FileOutputStream fos = new FileOutputStream(file);

@@ -20,11 +20,17 @@
     <!-- Status Colors (adjusted for dark backgrounds) -->
     <color name="success">#66BB6A</color>
     <color name="success_light">#1B3A1B</color>
+    <color name="success_surface">#173025</color>
     <color name="warning">#FFCA28</color>
     <color name="warning_light">#3A3018</color>
+    <color name="warning_surface">#342B17</color>
     <color name="error">#EF5350</color>
     <color name="error_pale">#E57373</color>
     <color name="error_light">#3A1B1B</color>
+    <color name="error_surface">#331C1C</color>
+    <color name="info_surface">#1B2E2C</color>
+    <color name="surface_elevated">#252827</color>
+    <color name="progress_track">#2F3432</color>
 
     <!-- Text Colors (light on dark) -->
     <color name="text_primary">#E0E0E0</color>
