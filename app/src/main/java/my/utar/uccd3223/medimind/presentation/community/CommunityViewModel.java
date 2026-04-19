@@ -25,6 +25,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +72,7 @@ public class CommunityViewModel extends ViewModel {
 
     // Track known request IDs to detect new ones for push notification
     private final Set<String> knownRequestIds = new HashSet<>();
+    private final Set<String> handledRemovalNotificationIds = new HashSet<>();
     private boolean initialLoadDone = false;
 
     @Inject
@@ -382,13 +385,12 @@ public class CommunityViewModel extends ViewModel {
 
         requestsListener = firestore.collection("friend_requests")
                 .whereEqualTo("toUid", currentUid)
-                .whereEqualTo("status", "pending")
                 .addSnapshotListener((snapshots, e) -> {
                     if (e != null) return;
                     if (snapshots == null) return;
 
                     List<FriendRequest> requests = new ArrayList<>();
-                    int unread = 0;
+                    int badgeTotal = 0;
 
                     for (QueryDocumentSnapshot doc : snapshots) {
                         FriendRequest request = new FriendRequest();
@@ -397,7 +399,9 @@ public class CommunityViewModel extends ViewModel {
                         request.setToUid(doc.getString("toUid"));
                         request.setFromName(doc.getString("fromName"));
                         request.setToName(doc.getString("toName"));
+                        request.setFromProfileImage(doc.getString("fromProfileImage"));
                         request.setMessage(doc.getString("message"));
+                        request.setType(doc.getString("type"));
                         request.setStatus(doc.getString("status"));
                         com.google.firebase.Timestamp ts = doc.getTimestamp("timestamp");
                         request.setTimestamp(ts != null ? ts.toDate().getTime() : 0);
@@ -406,21 +410,68 @@ public class CommunityViewModel extends ViewModel {
 
                         requests.add(request);
 
-                        if (!request.isRead()) {
-                            unread++;
+                        if ("member_removed".equals(request.typeOrDefault())) {
+                            handleMemberRemovalNotification(request);
                         }
 
-                        // Push notification for new requests
-                        if (initialLoadDone && !knownRequestIds.contains(doc.getId())) {
+                        if (request.requiresResponse(currentUid)
+                                || request.isUnreadRemovalNotice(currentUid)) {
+                            badgeTotal++;
+                        }
+
+                        if (initialLoadDone && !knownRequestIds.contains(doc.getId())
+                                && request.requiresResponse(currentUid)) {
                             showFriendRequestNotification(request);
                         }
                         knownRequestIds.add(doc.getId());
                     }
 
+                    Collections.sort(requests, buildNotificationComparator());
                     initialLoadDone = true;
                     pendingRequests.postValue(requests);
-                    unreadCount.postValue(unread);
+                    unreadCount.postValue(badgeTotal);
                 });
+    }
+
+    private Comparator<FriendRequest> buildNotificationComparator() {
+        return (left, right) -> {
+            boolean leftPending = left.requiresResponse(currentUid);
+            boolean rightPending = right.requiresResponse(currentUid);
+            if (leftPending != rightPending) {
+                return leftPending ? -1 : 1;
+            }
+            return Long.compare(right.getTimestamp(), left.getTimestamp());
+        };
+    }
+
+    private void handleMemberRemovalNotification(FriendRequest request) {
+        if (currentUid == null || request == null || !currentUid.equals(request.getToUid())) return;
+        if (!"member_removed".equals(request.typeOrDefault())) return;
+        if (TextUtils.isEmpty(request.getId()) || TextUtils.isEmpty(request.getFromUid())) return;
+
+        synchronized (handledRemovalNotificationIds) {
+            if (handledRemovalNotificationIds.contains(request.getId())) {
+                return;
+            }
+            handledRemovalNotificationIds.add(request.getId());
+        }
+
+        String removedByUid = request.getFromUid();
+        firestore.collection("users").document(currentUid)
+                .collection("community_members").document(removedByUid)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    synchronized (memberState) {
+                        memberState.remove(removedByUid);
+                    }
+                    ListenerRegistration adherenceRegistration = adherenceListeners.remove(removedByUid);
+                    if (adherenceRegistration != null) adherenceRegistration.remove();
+                    ListenerRegistration userRegistration = userListeners.remove(removedByUid);
+                    if (userRegistration != null) userRegistration.remove();
+                    publishMembers();
+                })
+                .addOnFailureListener(err -> Log.w("CommunityViewModel",
+                        "Failed to clean up removed member " + removedByUid, err));
     }
 
     // ─── Send Friend Request ─────────────────────────────────────
@@ -430,7 +481,7 @@ public class CommunityViewModel extends ViewModel {
 
         String trimmedId = shareableId.trim();
         if (trimmedId.isEmpty()) {
-            toastMessage.postValue("Please enter a member ID");
+            toastMessage.postValue(context.getString(R.string.enter_member_id_error));
             return;
         }
 
@@ -486,7 +537,9 @@ public class CommunityViewModel extends ViewModel {
                                             requestData.put("toUid", targetUid);
                                             requestData.put("fromName", currentUserName);
                                             requestData.put("toName", targetName);
+                                            requestData.put("fromProfileImage", currentProfileImage != null ? currentProfileImage : "");
                                             requestData.put("message", message != null ? message.trim() : "");
+                                            requestData.put("type", "request_join");
                                             requestData.put("status", "pending");
                                             requestData.put("timestamp", FieldValue.serverTimestamp());
                                             requestData.put("read", false);
@@ -579,6 +632,48 @@ public class CommunityViewModel extends ViewModel {
                         error.postValue("Failed to ignore request: " + err.getMessage()));
     }
 
+    public void removeCommunityMember(CommunityMember member) {
+        if (currentUid == null || member == null || member.getUid() == null) return;
+
+        String memberUid = member.getUid();
+        String memberName = !TextUtils.isEmpty(member.getName())
+                ? member.getName()
+                : context.getString(R.string.member_label);
+
+        WriteBatch batch = firestore.batch();
+        batch.delete(firestore.collection("users").document(currentUid)
+                .collection("community_members").document(memberUid));
+
+        Map<String, Object> notificationData = new HashMap<>();
+        notificationData.put("fromUid", currentUid);
+        notificationData.put("toUid", memberUid);
+        notificationData.put("fromName", currentUserName != null ? currentUserName : "");
+        notificationData.put("toName", memberName);
+        notificationData.put("fromProfileImage", currentProfileImage != null ? currentProfileImage : "");
+        notificationData.put("message", "");
+        notificationData.put("type", "member_removed");
+        notificationData.put("status", "removed");
+        notificationData.put("timestamp", FieldValue.serverTimestamp());
+        notificationData.put("read", false);
+
+        batch.set(firestore.collection("friend_requests").document(), notificationData);
+
+        batch.commit()
+                .addOnSuccessListener(aVoid -> {
+                    synchronized (memberState) {
+                        memberState.remove(memberUid);
+                    }
+                    ListenerRegistration adherenceRegistration = adherenceListeners.remove(memberUid);
+                    if (adherenceRegistration != null) adherenceRegistration.remove();
+                    ListenerRegistration userRegistration = userListeners.remove(memberUid);
+                    if (userRegistration != null) userRegistration.remove();
+                    publishMembers();
+                    toastMessage.postValue(context.getString(R.string.member_removed_success));
+                })
+                .addOnFailureListener(err ->
+                        error.postValue("Failed to remove member: " + err.getMessage()));
+    }
+
     public void updateMemberCustomTitle(String memberUid, String customTitle) {
         if (currentUid == null || memberUid == null || memberUid.isEmpty()) return;
 
@@ -618,23 +713,38 @@ public class CommunityViewModel extends ViewModel {
     // ─── Mark Requests Read ──────────────────────────────────────
 
     public void markRequestsRead() {
-        List<FriendRequest> requests = pendingRequests.getValue();
-        if (requests == null || requests.isEmpty()) return;
+        if (currentUid == null) return;
+        List<FriendRequest> currentRequests = pendingRequests.getValue();
+        if (currentRequests == null || currentRequests.isEmpty()) return;
 
         WriteBatch batch = firestore.batch();
-        boolean hasUnread = false;
-
-        for (FriendRequest request : requests) {
-            if (!request.isRead()) {
-                batch.update(firestore.collection("friend_requests").document(request.getId()),
-                        "read", true);
-                hasUnread = true;
+        boolean hasUpdates = false;
+        for (FriendRequest request : currentRequests) {
+            if (request != null && request.isUnreadRemovalNotice(currentUid) && request.getId() != null) {
+                batch.update(firestore.collection("friend_requests").document(request.getId()), "read", true);
+                request.setRead(true);
+                hasUpdates = true;
             }
         }
 
-        if (hasUnread) {
-            batch.commit();
-        }
+        if (!hasUpdates) return;
+
+        batch.commit()
+                .addOnSuccessListener(aVoid -> {
+                    List<FriendRequest> updatedRequests = new ArrayList<>(currentRequests);
+                    pendingRequests.postValue(updatedRequests);
+
+                    int badgeTotal = 0;
+                    for (FriendRequest request : updatedRequests) {
+                        if (request.requiresResponse(currentUid)
+                                || request.isUnreadRemovalNotice(currentUid)) {
+                            badgeTotal++;
+                        }
+                    }
+                    unreadCount.postValue(badgeTotal);
+                })
+                .addOnFailureListener(err -> Log.w("CommunityViewModel",
+                        "Failed to mark informational notifications as read", err));
     }
 
     // ─── Get Member Medications ──────────────────────────────────
@@ -714,7 +824,9 @@ public class CommunityViewModel extends ViewModel {
 
         String title = context.getString(R.string.community_notifications);
         String body = context.getString(R.string.new_friend_request,
-                request.getFromName() != null ? request.getFromName() : "Someone");
+                request.getFromName() != null
+                        ? request.getFromName()
+                        : context.getString(R.string.community_someone));
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, MediMindApplication.COMMUNITY_CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_community)

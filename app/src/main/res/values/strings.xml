@@ -17,6 +17,8 @@
     <string name="dont_have_account">Don\'t have an account?</string>
     <string name="create_account">Create Account</string>
     <string name="login">LOGIN</string>
+    <string name="continue_with_google">Continue with Google</string>
+    <string name="sign_up_with_google">Sign up with Google</string>
     <string name="subtitle_login">Your personal health companion</string>
     <string name="sign_in_header">Sign In</string>
     <string name="welcome_back_text">Welcome back! Enter your credentials to continue.</string>
@@ -49,6 +51,9 @@
     <string name="manage_medications_subtitle_format">%d active medications</string>
     <string name="online_ready">Online - Ready to help</string>
     <string name="consult_doctor">Consult Doctor</string>
+    <string name="theme_toggle">Theme toggle</string>
+    <string name="switch_to_dark">Switch to dark theme</string>
+    <string name="switch_to_light">Switch to light theme</string>
     <string name="daily_status_summary">Daily status summary</string>
     <string name="summary_taken">Taken</string>
     <string name="summary_pending">Pending</string>
@@ -111,12 +116,15 @@
     <string name="member_id">ID</string>
     <string name="messages_optional">MESSAGES (OPTIONAL)</string>
     <string name="send_request">SEND REQUEST</string>
+    <string name="enter_member_id_error">Please enter a member ID</string>
 
     <!-- Friend Requests / Notifications -->
     <string name="community_notifications">Community Notifications</string>
+    <string name="message_from_format">Message from %1$s</string>
     <string name="check_message">Check Message</string>
     <string name="accept">Accept</string>
     <string name="ignore">Ignore</string>
+    <string name="reject">Reject</string>
     <string name="close">Close</string>
 
     <!-- Community Detail -->
@@ -132,7 +140,23 @@
     <string name="request_already_sent">A request has already been sent to this user</string>
     <string name="request_accepted">Request accepted!</string>
     <string name="request_ignored">Request ignored</string>
+    <string name="member_removed_success">Member removed</string>
     <string name="new_friend_request">%s wants to join your community</string>
+    <string name="community_someone">Someone</string>
+    <string name="notification_member_removed">%1$s removed you from his/her Community.</string>
+    <string name="notification_request_accepted">You accepted %1$s into your Community.</string>
+    <string name="notification_request_ignored">You rejected %1$s\'s request to join your Community.</string>
+    <string name="notification_body_request_pending">Requested to join your Community.</string>
+    <string name="notification_body_request_accepted">You accepted this request into your Community.</string>
+    <string name="notification_body_request_ignored">You rejected this request to join your Community.</string>
+    <string name="notification_body_member_removed">Removed you from their Community.</string>
+    <string name="notification_status_removed_member">Removed member</string>
+    <string name="notification_status_accepted">Responded: accepted</string>
+    <string name="notification_status_rejected">Responded: rejected</string>
+    <string name="notification_status_awaiting_response">Awaiting your response</string>
+    <string name="remove_member">Remove Member</string>
+    <string name="remove_member_confirmation">Remove %1$s from your community? They will lose access to your shared status and receive a notification.</string>
+    <string name="member_label">member</string>
     <string name="loading_members">Loading community members…</string>
     <string name="no_notifications">No notifications</string>
     <string name="status_taken">Taken</string>

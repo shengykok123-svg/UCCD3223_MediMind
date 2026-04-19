@@ -82,6 +82,28 @@
             app:tint="@color/primary" />
     </LinearLayout>
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_remove_member"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/bg_remove_member_button"
+        android:gravity="center"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:paddingStart="18dp"
+        android:paddingEnd="18dp"
+        android:text="@string/remove_member"
+        android:textColor="@color/error"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:visibility="gone"
+        app:cornerRadius="22dp"
+        app:strokeColor="@color/error_pale"
+        app:strokeWidth="1dp" />
+
     <!-- Summary Counts -->
     <LinearLayout
         android:layout_width="match_parent"

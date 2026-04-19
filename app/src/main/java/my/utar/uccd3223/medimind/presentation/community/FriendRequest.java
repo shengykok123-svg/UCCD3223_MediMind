@@ -6,7 +6,9 @@ public class FriendRequest {
     private String toUid;
     private String fromName;
     private String toName;
+    private String fromProfileImage;
     private String message;
+    private String type; // request_join, member_removed
     private String status; // "pending", "accepted", "ignored"
     private long timestamp;
     private boolean read;
@@ -41,8 +43,14 @@ public class FriendRequest {
     public String getToName() { return toName; }
     public void setToName(String toName) { this.toName = toName; }
 
+    public String getFromProfileImage() { return fromProfileImage; }
+    public void setFromProfileImage(String fromProfileImage) { this.fromProfileImage = fromProfileImage; }
+
     public String getMessage() { return message; }
     public void setMessage(String message) { this.message = message; }
+
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
@@ -52,4 +60,26 @@ public class FriendRequest {
 
     public boolean isRead() { return read; }
     public void setRead(boolean read) { this.read = read; }
+
+    public boolean requiresResponse(String currentUid) {
+        return "request_join".equals(typeOrDefault())
+                && "pending".equalsIgnoreCase(status)
+                && currentUid != null
+                && currentUid.equals(toUid);
+    }
+
+    public boolean isResponded() {
+        return !"pending".equalsIgnoreCase(status);
+    }
+
+    public boolean isUnreadRemovalNotice(String currentUid) {
+        return currentUid != null
+                && currentUid.equals(toUid)
+                && "member_removed".equals(typeOrDefault())
+                && !read;
+    }
+
+    public String typeOrDefault() {
+        return type != null && !type.trim().isEmpty() ? type : "request_join";
+    }
 }

@@ -61,9 +61,18 @@
                 android:orientation="horizontal">
 
                 <ImageButton
+                    android:id="@+id/btn_theme_toggle"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/theme_toggle"
+                    android:src="@drawable/ic_dark_mode" />
+
+                <ImageButton
                     android:id="@+id/btn_calendar"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
+                    android:layout_marginStart="4dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="Calendar"
                     android:src="@drawable/ic_calendar"

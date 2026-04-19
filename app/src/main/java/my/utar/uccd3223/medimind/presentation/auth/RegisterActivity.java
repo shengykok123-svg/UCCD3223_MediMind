@@ -19,9 +19,13 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -41,13 +45,15 @@ public class RegisterActivity extends AppCompatActivity {
     private EditText inputDob, inputWeight, inputAllergies;
     private Spinner spinnerGender, spinnerBloodType;
     private CheckBox checkboxTerms;
-    private Button btnCreate;
+    private Button btnCreate, btnGoogleRegister;
     private ProgressBar progressBar;
     private boolean passwordVisible = false;
     private boolean confirmPasswordVisible = false;
 
     private FirebaseAuth firebaseAuth;
     private FirebaseFirestore firestore;
+    private GoogleAuthHelper googleAuthHelper;
+    private ActivityResultLauncher<Intent> googleSignInLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,13 +75,61 @@ public class RegisterActivity extends AppCompatActivity {
         spinnerBloodType = findViewById(R.id.spinner_blood_type);
         checkboxTerms = findViewById(R.id.checkbox_terms);
         btnCreate = findViewById(R.id.btn_create);
+        btnGoogleRegister = findViewById(R.id.btn_google_register);
         progressBar = findViewById(R.id.progress_bar);
+        googleAuthHelper = new GoogleAuthHelper(this, firebaseAuth, new GoogleAuthHelper.Callback() {
+            @Override
+            public void onLoading(boolean loading) {
+                setLoading(loading);
+            }
+
+            @Override
+            public void onFirebaseSuccess(AuthResult authResult, GoogleSignInAccount account) {
+                if (firebaseAuth.getCurrentUser() == null) {
+                    setLoading(false);
+                    Toast.makeText(RegisterActivity.this, "Google sign-in failed", Toast.LENGTH_LONG).show();
+                    return;
+                }
+                String uid = firebaseAuth.getCurrentUser().getUid();
+                firestore.collection("users").document(uid)
+                        .get()
+                        .addOnSuccessListener(snapshot -> {
+                            if (snapshot.exists()) {
+                                navigateToMain();
+                            } else {
+                                String name = account.getDisplayName() != null ? account.getDisplayName() : "";
+                                String email = account.getEmail() != null ? account.getEmail() : "";
+                                generateShareableIdAndCreateProfile(uid, name, email, "", "", "", "", "");
+                            }
+                        })
+                        .addOnFailureListener(e -> {
+                            setLoading(false);
+                            Toast.makeText(RegisterActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
+                        });
+            }
+
+            @Override
+            public void onError(String message) {
+                Toast.makeText(RegisterActivity.this, message, Toast.LENGTH_LONG).show();
+            }
+        });
+        googleSignInLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                        googleAuthHelper.handleResult(result.getData());
+                    } else {
+                        setLoading(false);
+                    }
+                }
+        );
 
         setupSpinners();
         setupDatePicker();
         setupPasswordToggles();
 
         btnCreate.setOnClickListener(v -> handleRegister());
+        btnGoogleRegister.setOnClickListener(v -> googleAuthHelper.start(googleSignInLauncher));
 
         // Sign In link
         TextView textSignInLink = findViewById(R.id.text_sign_in_link);
@@ -272,10 +326,7 @@ public class RegisterActivity extends AppCompatActivity {
                 .addOnSuccessListener(aVoid -> {
                     setLoading(false);
                     Toast.makeText(this, "Account created successfully!", Toast.LENGTH_SHORT).show();
-                    Intent intent = new Intent(this, MainActivity.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    startActivity(intent);
-                    finish();
+                    navigateToMain();
                 })
                 .addOnFailureListener(e -> {
                     setLoading(false);
@@ -286,5 +337,15 @@ public class RegisterActivity extends AppCompatActivity {
     private void setLoading(boolean loading) {
         progressBar.setVisibility(loading ? View.VISIBLE : View.GONE);
         btnCreate.setEnabled(!loading);
+        if (btnGoogleRegister != null) {
+            btnGoogleRegister.setEnabled(!loading);
+        }
+    }
+
+    private void navigateToMain() {
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 }

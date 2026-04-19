@@ -16,6 +16,17 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/users/$(targetUserId)/community_members/$(request.auth.uid));
     }
 
+    function isCommunityMirrorWriter(memberId) {
+      return isAuthenticated() && request.auth.uid == memberId;
+    }
+
+    function isMirrorMemberCreate() {
+      return request.resource.data.keys().hasOnly(["name", "shareableId", "addedAt"]) &&
+        request.resource.data.name is string &&
+        request.resource.data.shareableId is string &&
+        request.resource.data.addedAt != null;
+    }
+
     // Users collection
     match /users/{userId} {
       // Users must be able to look up other registered users by shareableId
@@ -48,9 +59,15 @@ service cloud.firestore {
       }
 
       // Community members sub-collection
-      // Only the owner may manage their own community member metadata
+      // Owner manages local metadata like customTitle.
+      // The mirrored member may only create/delete their own mirror card so
+      // request acceptance can establish the bidirectional connection.
       match /community_members/{memberId} {
-        allow read, write: if isOwner(userId);
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) ||
+          (isCommunityMirrorWriter(memberId) && isMirrorMemberCreate());
+        allow update: if isOwner(userId);
+        allow delete: if isOwner(userId) || isCommunityMirrorWriter(memberId);
       }
     }
 
@@ -64,8 +81,10 @@ service cloud.firestore {
 
       // Allow create if you are the sender
       allow create: if isAuthenticated() &&
-        request.auth.uid == request.resource.data.fromUid &&
-        request.resource.data.status == "pending";
+        request.auth.uid == request.resource.data.fromUid && (
+          request.resource.data.status == "pending" ||
+          request.resource.data.type == "member_removed"
+        );
 
       // Allow update if you are the receiver (accept/ignore)
       // or the sender (cancel)

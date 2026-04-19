@@ -22,6 +22,7 @@ import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.lifecycle.Observer;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -180,7 +181,7 @@ public class CommunityFragment extends Fragment {
             String message = inputMessage.getText().toString().trim();
 
             if (id.isEmpty()) {
-                inputId.setError("Please enter a member ID");
+                inputId.setError(getString(R.string.enter_member_id_error));
                 return;
             }
 
@@ -226,14 +227,14 @@ public class CommunityFragment extends Fragment {
         recyclerNotifications.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerNotifications.setAdapter(notificationAdapter);
 
-        // Observe pending requests for this dialog
-        viewModel.getPendingRequests().observe(getViewLifecycleOwner(), requests -> {
-            if (requests != null) {
-                notificationAdapter.setRequests(requests);
-            }
-        });
+        notificationAdapter.setRequests(viewModel.getPendingRequests().getValue());
+        Observer<List<FriendRequest>> observer = requests -> {
+            if (requests != null) notificationAdapter.setRequests(requests);
+        };
+        viewModel.getPendingRequests().observe(getViewLifecycleOwner(), observer);
 
         btnClose.setOnClickListener(v -> dialog.dismiss());
+        dialog.setOnDismissListener(d -> viewModel.getPendingRequests().removeObserver(observer));
 
         dialog.show();
     }
@@ -256,8 +257,10 @@ public class CommunityFragment extends Fragment {
         TextView textMessage = dialog.findViewById(R.id.text_message);
         Button btnClose = dialog.findViewById(R.id.btn_close);
 
-        String senderName = request.getFromName() != null ? request.getFromName() : "Someone";
-        textTitle.setText(String.format("Message from %s", senderName));
+        String senderName = request.getFromName() != null
+                ? request.getFromName()
+                : getString(R.string.community_someone);
+        textTitle.setText(getString(R.string.message_from_format, senderName));
         textMessage.setText(request.getMessage());
 
         btnClose.setOnClickListener(v -> dialog.dismiss());
@@ -274,6 +277,7 @@ public class CommunityFragment extends Fragment {
 
         ImageButton btnClose = dialog.findViewById(R.id.btn_close);
         ImageButton btnEditTitle = dialog.findViewById(R.id.btn_edit_title);
+        Button btnRemoveMember = dialog.findViewById(R.id.btn_remove_member);
         View nicknameRow = dialog.findViewById(R.id.nickname_row);
         TextView textCurrentNickname = dialog.findViewById(R.id.text_current_nickname);
         TextView textTitle = dialog.findViewById(R.id.text_title);
@@ -293,11 +297,13 @@ public class CommunityFragment extends Fragment {
         btnClose.setOnClickListener(v -> dialog.dismiss());
         if (!member.isSelf()) {
             nicknameRow.setVisibility(View.VISIBLE);
+            btnRemoveMember.setVisibility(View.VISIBLE);
             String nickname = member.getCustomTitle() != null && !member.getCustomTitle().trim().isEmpty()
                     ? member.getCustomTitle().trim()
                     : (member.getName() != null ? member.getName() : "");
             textCurrentNickname.setText(nickname);
             btnEditTitle.setOnClickListener(v -> showEditMemberTitleDialog(member, textCurrentNickname, textTitle));
+            btnRemoveMember.setOnClickListener(v -> showRemoveMemberDialog(member, dialog));
         }
 
         final ListenerRegistration medicationListener = viewModel.observeMemberMedications(
@@ -337,6 +343,37 @@ public class CommunityFragment extends Fragment {
         );
 
         dialog.setOnDismissListener(d -> medicationListener.remove());
+        dialog.show();
+    }
+
+    private void showRemoveMemberDialog(CommunityMember member, Dialog parentDialog) {
+        Dialog dialog = new Dialog(requireContext());
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_confirmation);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            dialog.getWindow().setLayout(
+                    (int) (getResources().getDisplayMetrics().widthPixels * 0.92f),
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+
+        TextView textTitle = dialog.findViewById(R.id.text_title);
+        TextView textMessage = dialog.findViewById(R.id.text_message);
+        Button btnCancel = dialog.findViewById(R.id.btn_cancel);
+        Button btnConfirm = dialog.findViewById(R.id.btn_confirm);
+
+        textTitle.setText(R.string.remove_member);
+        textMessage.setText(getString(R.string.remove_member_confirmation,
+                member.getName() != null ? member.getName() : getString(R.string.member_label)));
+        btnConfirm.setText(R.string.remove_member);
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+        btnConfirm.setOnClickListener(v -> {
+            viewModel.removeCommunityMember(member);
+            dialog.dismiss();
+            parentDialog.dismiss();
+        });
+
         dialog.show();
     }
 

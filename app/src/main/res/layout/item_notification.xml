@@ -2,6 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root_notification"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@color/surface"
@@ -13,45 +14,82 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
-        <!-- Avatar -->
         <ImageView
             android:id="@+id/img_avatar"
             android:layout_width="56dp"
             android:layout_height="56dp"
             android:background="@drawable/bg_circle_avatar"
-            android:contentDescription="User avatar"
+            android:contentDescription="@string/profile_photo"
             android:padding="12dp"
             android:src="@drawable/ic_person"
             app:tint="@color/on_primary" />
 
-        <!-- Message Content -->
-        <TextView
-            android:id="@+id/text_message"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
             android:layout_weight="1"
-            android:lineSpacingMultiplier="1.2"
-            android:textColor="@color/text_primary"
-            android:textSize="14sp"
-            tools:text="Jason is request to add you to his Community and leave you a message." />
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/text_sender_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:maxLines="1"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                tools:text="Jason Tan" />
+
+            <TextView
+                android:id="@+id/text_message"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:lineSpacingExtra="2dp"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp"
+                tools:text="Requested to join your Community." />
+        </LinearLayout>
     </LinearLayout>
 
+    <TextView
+        android:id="@+id/text_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/bg_status_badge"
+        android:paddingStart="10dp"
+        android:paddingTop="6dp"
+        android:paddingEnd="10dp"
+        android:paddingBottom="6dp"
+        android:textColor="@color/text_secondary"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        tools:text="Awaiting your response" />
+
     <!-- Check Message Button (visible for requests with messages) -->
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_check_message"
         android:layout_width="match_parent"
-        android:layout_height="40dp"
+        android:layout_height="44dp"
         android:layout_marginTop="10dp"
         android:background="@drawable/bg_rounded_button_outline"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
         android:text="@string/check_message"
         android:textColor="@color/primary"
         android:textSize="14sp"
         android:textStyle="bold"
         android:visibility="gone"
+        app:cornerRadius="18dp"
+        app:strokeColor="@color/primary"
+        app:strokeWidth="1dp"
         tools:visibility="visible" />
 
-    <!-- Accept / Ignore Buttons (visible for pending requests) -->
+    <!-- Accept / Reject Buttons (visible for pending requests) -->
     <LinearLayout
         android:id="@+id/action_buttons"
         android:layout_width="match_parent"
@@ -62,29 +100,39 @@
         android:visibility="gone"
         tools:visibility="visible">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_accept"
             android:layout_width="0dp"
-            android:layout_height="40dp"
+            android:layout_height="46dp"
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
-            android:background="@drawable/bg_rounded_button"
+            android:background="@drawable/bg_notification_accept"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
             android:text="@string/accept"
             android:textColor="@color/on_primary"
             android:textSize="14sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            app:cornerRadius="18dp" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_ignore"
             android:layout_width="0dp"
-            android:layout_height="40dp"
+            android:layout_height="46dp"
             android:layout_marginStart="8dp"
             android:layout_weight="1"
-            android:background="@drawable/bg_rounded_button_outline"
-            android:text="@string/ignore"
-            android:textColor="@color/primary"
+            android:background="@drawable/bg_notification_reject"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:text="@string/reject"
+            android:textColor="@color/error"
             android:textSize="14sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            app:cornerRadius="18dp" />
     </LinearLayout>
 
     <!-- Bottom Divider -->

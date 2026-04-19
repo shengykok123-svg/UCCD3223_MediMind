@@ -39,6 +39,7 @@ import java.util.Locale;
 import my.utar.uccd3223.medimind.R;
 import my.utar.uccd3223.medimind.databinding.FragmentHomeBinding;
 import my.utar.uccd3223.medimind.presentation.ai.AiAssistantViewModel;
+import my.utar.uccd3223.medimind.util.ThemeManager;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -90,6 +91,7 @@ public class HomeFragment extends Fragment {
 
     private void setupHeader() {
         updateDateDisplay();
+        updateThemeToggleState();
     }
 
     private void updateDateDisplay() {
@@ -418,6 +420,9 @@ public class HomeFragment extends Fragment {
         binding.btnAddMedication.setOnClickListener(v ->
                 Navigation.findNavController(v).navigate(R.id.action_home_to_manage));
 
+        binding.btnThemeToggle.setOnClickListener(v ->
+                ThemeManager.toggleTheme(requireContext()));
+
         binding.btnCalendar.setOnClickListener(v -> {
             DatePickerDialog picker = new DatePickerDialog(
                     requireContext(),
@@ -448,9 +453,20 @@ public class HomeFragment extends Fragment {
         });
     }
 
+    private void updateThemeToggleState() {
+        boolean darkMode = ThemeManager.isDarkMode(requireContext());
+        binding.btnThemeToggle.setImageResource(
+                darkMode ? R.drawable.ic_dark_mode : R.drawable.ic_light_mode
+        );
+        binding.btnThemeToggle.setContentDescription(
+                getString(darkMode ? R.string.switch_to_light : R.string.switch_to_dark)
+        );
+    }
+
     @Override
     public void onResume() {
         super.onResume();
+        updateThemeToggleState();
         // Recalculate date flags in case midnight has passed since last load
         String dateStr = viewModel.getSelectedDate().getValue();
         if (dateStr != null) {

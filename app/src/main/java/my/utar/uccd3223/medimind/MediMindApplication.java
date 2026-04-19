@@ -5,6 +5,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.os.Build;
 import dagger.hilt.android.HiltAndroidApp;
+import my.utar.uccd3223.medimind.util.ThemeManager;
 
 @HiltAndroidApp
 public class MediMindApplication extends Application {
@@ -15,6 +16,7 @@ public class MediMindApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        ThemeManager.applyStoredTheme(this);
         createNotificationChannels();
     }
 
