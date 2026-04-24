@@ -8,6 +8,9 @@ import java.util.List;
 import my.utar.uccd3223.medimind.data.local.database.entities.AdherenceLog;
 
 @Dao
+/**
+ * DAO for adherence history used by reports and community sync.
+ */
 public interface AdherenceDao {
 
     @Query("SELECT * FROM adherence_logs WHERE medicationId = :medicationId ORDER BY scheduledDateTime DESC")

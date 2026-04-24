@@ -49,6 +49,9 @@ import my.utar.uccd3223.medimind.data.local.database.entities.Schedule;
 import my.utar.uccd3223.medimind.databinding.FragmentManageMedicationsBinding;
 import my.utar.uccd3223.medimind.util.MedicationImageUtils;
 
+/**
+ * Provides add, edit, delete, scan-prefill, and image workflows for medications.
+ */
 @AndroidEntryPoint
 public class ManageMedicationsFragment extends Fragment {
 

@@ -4,6 +4,9 @@ import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
 @Entity(tableName = "schedules")
+/**
+ * Room entity describing when and how often a medication should be taken.
+ */
 public class Schedule {
 
     @PrimaryKey(autoGenerate = true)

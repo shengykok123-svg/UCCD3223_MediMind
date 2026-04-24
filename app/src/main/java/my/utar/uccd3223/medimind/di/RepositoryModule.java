@@ -18,6 +18,9 @@ import my.utar.uccd3223.medimind.domain.repository.MedicationRepository;
 import java.util.concurrent.Executor;
 import javax.inject.Singleton;
 
+/**
+ * Connects repository abstractions to concrete implementations for Hilt injection.
+ */
 @Module
 @InstallIn(SingletonComponent.class)
 public class RepositoryModule {

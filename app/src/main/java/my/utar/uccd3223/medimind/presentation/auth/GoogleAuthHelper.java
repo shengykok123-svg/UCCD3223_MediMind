@@ -18,6 +18,9 @@ import com.google.firebase.auth.GoogleAuthProvider;
 
 import my.utar.uccd3223.medimind.R;
 
+/**
+ * Wraps Google Sign-In and Firebase authentication callbacks for login/register screens.
+ */
 public class GoogleAuthHelper {
 
     public interface Callback {

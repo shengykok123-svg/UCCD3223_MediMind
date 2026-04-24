@@ -11,6 +11,9 @@ import java.util.concurrent.TimeUnit;
  * POJO for joined Medication + Schedule query result.
  * Used to display medication timeline on the Home screen.
  */
+/**
+ * Projection model combining medication and schedule fields for home/report lists.
+ */
 public class MedicationScheduleItem {
 
     // Medication fields

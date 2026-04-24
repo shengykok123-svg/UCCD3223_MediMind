@@ -15,6 +15,9 @@ import my.utar.uccd3223.medimind.data.local.database.entities.Medication;
 import my.utar.uccd3223.medimind.databinding.ItemManageMedicationBinding;
 import my.utar.uccd3223.medimind.util.MedicationImageUtils;
 
+/**
+ * Binds medication rows in the manage screen and exposes edit/delete callbacks.
+ */
 public class ManageMedicationAdapter extends ListAdapter<Medication, ManageMedicationAdapter.ViewHolder> {
 
     private final OnEditClickListener editListener;

@@ -1,5 +1,8 @@
 package my.utar.uccd3223.medimind.presentation.community;
 
+/**
+ * Model for friend request and community notification documents from Firestore.
+ */
 public class FriendRequest {
     private String id;
     private String fromUid;

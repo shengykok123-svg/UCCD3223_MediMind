@@ -17,6 +17,9 @@ import my.utar.uccd3223.medimind.data.local.database.entities.*;
         version = 3,
         exportSchema = false
 )
+/**
+ * Room database definition that exposes local DAOs for medications, schedules, and adherence.
+ */
 public abstract class MediMindDatabase extends RoomDatabase {
 
     private static volatile MediMindDatabase INSTANCE;

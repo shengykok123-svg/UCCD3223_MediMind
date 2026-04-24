@@ -34,6 +34,9 @@ import dagger.hilt.android.AndroidEntryPoint;
 import my.utar.uccd3223.medimind.R;
 import my.utar.uccd3223.medimind.databinding.FragmentAiAssistantBinding;
 
+/**
+ * Provides the AI chat UI, image attachment preview, voice input, and scan handoff.
+ */
 @AndroidEntryPoint
 public class AiAssistantFragment extends Fragment {
 
@@ -46,6 +49,10 @@ public class AiAssistantFragment extends Fragment {
     private ActivityResultLauncher<Intent> speechRecognizerLauncher;
     private ActivityResultLauncher<String> audioPermissionLauncher;
 
+    /**
+     * Registers image, speech, and microphone-permission launchers before the view exists.
+     * These launchers feed user-selected media or voice text back into the chat controls.
+     */
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -96,6 +103,9 @@ public class AiAssistantFragment extends Fragment {
         );
     }
 
+    /**
+     * Inflates the chat screen binding.
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -104,6 +114,10 @@ public class AiAssistantFragment extends Fragment {
         return binding.getRoot();
     }
 
+    /**
+     * Connects the shared ViewModel, prepares the chat list, wires input controls,
+     * and consumes pending prompts from scan/home navigation.
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -119,15 +133,19 @@ public class AiAssistantFragment extends Fragment {
         my.utar.uccd3223.medimind.presentation.scan.ScanViewModel scanViewModel =
                 new ViewModelProvider(requireActivity()).get(
                         my.utar.uccd3223.medimind.presentation.scan.ScanViewModel.class);
-        String pendingQuery = viewModel.consumePendingQuery();
+        String pendingQuery = scanViewModel.consumePendingAiQuery();
         if (pendingQuery != null && !pendingQuery.isEmpty()) {
-            viewModel.sendMessage(pendingQuery);
+            String displayText = scanViewModel.consumePendingAiDisplayText();
+            viewModel.sendMessage(pendingQuery, displayText);
         } else {
-            pendingQuery = scanViewModel.consumePendingAiQuery();
+            pendingQuery = viewModel.consumePendingQuery();
+            if (pendingQuery != null && !pendingQuery.isEmpty()) {
+                viewModel.sendMessage(pendingQuery);
+                return;
+            }
         }
-        if (pendingQuery != null && !pendingQuery.isEmpty()) {
-            viewModel.sendMessage(pendingQuery);
-        } else if (getArguments() != null) {
+
+        if ((pendingQuery == null || pendingQuery.isEmpty()) && getArguments() != null) {
             String medQuery = getArguments().getString("medicationQuery", "");
             if (!medQuery.isEmpty()) {
                 viewModel.sendMessage(medQuery);
@@ -136,6 +154,9 @@ public class AiAssistantFragment extends Fragment {
         }
     }
 
+    /**
+     * Configures the chat RecyclerView so new messages appear near the bottom.
+     */
     private void setupRecyclerView() {
         adapter = new ChatMessageAdapter();
         LinearLayoutManager layoutManager = new LinearLayoutManager(requireContext());
@@ -144,6 +165,9 @@ public class AiAssistantFragment extends Fragment {
         binding.recyclerChat.setAdapter(adapter);
     }
 
+    /**
+     * Wires send, microphone, image attach, and image removal actions.
+     */
     private void setupInputControls() {
         // Send button
         binding.btnSend.setOnClickListener(v -> {
@@ -178,6 +202,9 @@ public class AiAssistantFragment extends Fragment {
         binding.btnRemoveImage.setOnClickListener(v -> viewModel.clearPendingImage());
     }
 
+    /**
+     * Shows the overflow menu for chat actions such as clearing the conversation.
+     */
     private void setupMenuButton() {
         binding.btnMenu.setOnClickListener(v -> {
             PopupMenu popup = new PopupMenu(requireContext(), v);
@@ -193,6 +220,9 @@ public class AiAssistantFragment extends Fragment {
         });
     }
 
+    /**
+     * Observes chat state and updates the list, loading controls, image preview, and errors.
+     */
     private void setupObservers() {
         // Messages observer
         viewModel.getMessages().observe(getViewLifecycleOwner(), messages -> {
@@ -226,6 +256,9 @@ public class AiAssistantFragment extends Fragment {
         });
     }
 
+    /**
+     * Starts Android speech recognition and asks for free-form dictated chat input.
+     */
     private void launchSpeechRecognizer() {
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
@@ -241,6 +274,9 @@ public class AiAssistantFragment extends Fragment {
         }
     }
 
+    /**
+     * Converts a selected image URI into a mutable bitmap that Gemini can receive.
+     */
     private Bitmap uriToBitmap(Uri uri) {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -260,6 +296,9 @@ public class AiAssistantFragment extends Fragment {
         }
     }
 
+    /**
+     * Clears the view binding when the fragment view is destroyed.
+     */
     @Override
     public void onDestroyView() {
         super.onDestroyView();

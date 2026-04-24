@@ -29,6 +29,9 @@ import my.utar.uccd3223.medimind.util.Constants;
 import my.utar.uccd3223.medimind.util.DateTimeUtils;
 import my.utar.uccd3223.medimind.worker.MedicationReminderWorker;
 
+/**
+ * Applies user actions from reminder notifications and updates dose status.
+ */
 public class MedicationActionReceiver extends BroadcastReceiver {
 
     public static final String ACTION_TAKE = "my.utar.uccd3223.medimind.ACTION_TAKE";

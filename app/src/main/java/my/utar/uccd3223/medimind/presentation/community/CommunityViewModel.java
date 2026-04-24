@@ -41,6 +41,9 @@ import my.utar.uccd3223.medimind.MainActivity;
 import my.utar.uccd3223.medimind.R;
 import my.utar.uccd3223.medimind.domain.repository.MedicationRepository;
 
+/**
+ * Manages community membership, friend requests, adherence sharing, and notifications.
+ */
 @HiltViewModel
 public class CommunityViewModel extends ViewModel {
 
@@ -75,6 +78,9 @@ public class CommunityViewModel extends ViewModel {
     private final Set<String> handledRemovalNotificationIds = new HashSet<>();
     private boolean initialLoadDone = false;
 
+    /**
+     * Captures injected services and starts user-scoped listeners when a Firebase user exists.
+     */
     @Inject
     public CommunityViewModel(MedicationRepository repository, Executor executor,
                               Context context, FirebaseFirestore firestore) {
@@ -170,6 +176,9 @@ public class CommunityViewModel extends ViewModel {
                 });
     }
 
+    /**
+     * Refreshes adherence listeners for every community member.
+     */
     public void loadMemberAdherence() {
         if (currentUid == null || syncHelper == null) return;
         isLoading.postValue(true);
@@ -380,6 +389,9 @@ public class CommunityViewModel extends ViewModel {
 
     // ─── Requests Listener ───────────────────────────────────────
 
+    /**
+     * Listens to incoming friend request and community notification documents.
+     */
     private void attachRequestsListener() {
         if (currentUid == null) return;
 
@@ -433,6 +445,9 @@ public class CommunityViewModel extends ViewModel {
                 });
     }
 
+    /**
+     * Sorts notifications so actionable pending requests appear before history items.
+     */
     private Comparator<FriendRequest> buildNotificationComparator() {
         return (left, right) -> {
             boolean leftPending = left.requiresResponse(currentUid);
@@ -444,6 +459,9 @@ public class CommunityViewModel extends ViewModel {
         };
     }
 
+    /**
+     * Handles a member-removal notice once so local member state matches the remote event.
+     */
     private void handleMemberRemovalNotification(FriendRequest request) {
         if (currentUid == null || request == null || !currentUid.equals(request.getToUid())) return;
         if (!"member_removed".equals(request.typeOrDefault())) return;
@@ -476,6 +494,9 @@ public class CommunityViewModel extends ViewModel {
 
     // ─── Send Friend Request ─────────────────────────────────────
 
+    /**
+     * Sends a friend request after validating self-adds, existing members, and duplicates.
+     */
     public void sendFriendRequest(String shareableId, String message) {
         if (currentUid == null) return;
 
@@ -573,6 +594,9 @@ public class CommunityViewModel extends ViewModel {
 
     // ─── Accept Request ──────────────────────────────────────────
 
+    /**
+     * Accepts a pending request and creates bidirectional community-member records.
+     */
     public void acceptRequest(FriendRequest request) {
         if (currentUid == null) return;
 
@@ -623,6 +647,9 @@ public class CommunityViewModel extends ViewModel {
 
     // ─── Ignore Request ──────────────────────────────────────────
 
+    /**
+     * Rejects a friend request while keeping it available as notification history.
+     */
     public void ignoreRequest(FriendRequest request) {
         firestore.collection("friend_requests").document(request.getId())
                 .update("status", "ignored", "read", true)
@@ -632,6 +659,9 @@ public class CommunityViewModel extends ViewModel {
                         error.postValue("Failed to ignore request: " + err.getMessage()));
     }
 
+    /**
+     * Removes a member locally and notifies the removed user.
+     */
     public void removeCommunityMember(CommunityMember member) {
         if (currentUid == null || member == null || member.getUid() == null) return;
 
@@ -674,6 +704,9 @@ public class CommunityViewModel extends ViewModel {
                         error.postValue("Failed to remove member: " + err.getMessage()));
     }
 
+    /**
+     * Updates a custom member title and rolls the local UI back if Firestore fails.
+     */
     public void updateMemberCustomTitle(String memberUid, String customTitle) {
         if (currentUid == null || memberUid == null || memberUid.isEmpty()) return;
 
@@ -712,6 +745,9 @@ public class CommunityViewModel extends ViewModel {
 
     // ─── Mark Requests Read ──────────────────────────────────────
 
+    /**
+     * Marks viewed informational notifications as read without resolving pending requests.
+     */
     public void markRequestsRead() {
         if (currentUid == null) return;
         List<FriendRequest> currentRequests = pendingRequests.getValue();
@@ -748,6 +784,81 @@ public class CommunityViewModel extends ViewModel {
     }
 
     // ─── Get Member Medications ──────────────────────────────────
+
+    /**
+     * Deletes accepted, rejected, or viewed notification history while preserving pending requests.
+     */
+    public void clearNotificationHistory() {
+        if (currentUid == null) return;
+        List<FriendRequest> currentRequests = pendingRequests.getValue();
+        if (currentRequests == null || currentRequests.isEmpty()) {
+            toastMessage.postValue(context.getString(R.string.no_notification_history_to_clear));
+            return;
+        }
+
+        WriteBatch batch = firestore.batch();
+        List<FriendRequest> remainingRequests = new ArrayList<>();
+        boolean hasDeletes = false;
+
+        for (FriendRequest request : currentRequests) {
+            if (request == null || TextUtils.isEmpty(request.getId())) {
+                continue;
+            }
+
+            if (canClearNotification(request)) {
+                batch.delete(firestore.collection("friend_requests").document(request.getId()));
+                hasDeletes = true;
+            } else {
+                remainingRequests.add(request);
+            }
+        }
+
+        if (!hasDeletes) {
+            toastMessage.postValue(context.getString(R.string.no_notification_history_to_clear));
+            return;
+        }
+
+        batch.commit()
+                .addOnSuccessListener(aVoid -> {
+                    pendingRequests.postValue(remainingRequests);
+                    unreadCount.postValue(calculateUnreadCount(remainingRequests));
+                    toastMessage.postValue(context.getString(R.string.notification_history_cleared));
+                })
+                .addOnFailureListener(err ->
+                        error.postValue("Failed to clear notification history: " + err.getMessage()));
+    }
+
+    /**
+     * Determines whether a notification is safe to remove from history.
+     */
+    private boolean canClearNotification(FriendRequest request) {
+        if (request.requiresResponse(currentUid)) {
+            return false;
+        }
+
+        if ("member_removed".equals(request.typeOrDefault())) {
+            return request.isRead();
+        }
+
+        return request.isResponded() || request.isRead();
+    }
+
+    /**
+     * Recomputes the badge count after local notification list changes.
+     */
+    private int calculateUnreadCount(List<FriendRequest> requests) {
+        int badgeTotal = 0;
+        if (requests == null) return badgeTotal;
+
+        for (FriendRequest request : requests) {
+            if (request != null
+                    && (request.requiresResponse(currentUid)
+                    || request.isUnreadRemovalNotice(currentUid))) {
+                badgeTotal++;
+            }
+        }
+        return badgeTotal;
+    }
 
     public interface MedicationListCallback {
         void onResult(List<Map<String, Object>> medications, int taken, int pending, int missed);

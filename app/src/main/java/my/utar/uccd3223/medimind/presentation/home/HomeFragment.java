@@ -43,6 +43,9 @@ import my.utar.uccd3223.medimind.util.ThemeManager;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
+/**
+ * Shows today's medication schedule and provides quick dose actions.
+ */
 @AndroidEntryPoint
 public class HomeFragment extends Fragment {
 
@@ -55,6 +58,9 @@ public class HomeFragment extends Fragment {
     // Currently selected calendar date
     private Calendar selectedCalendar = Calendar.getInstance();
 
+    /**
+     * Inflates the home dashboard layout.
+     */
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container,
@@ -63,6 +69,9 @@ public class HomeFragment extends Fragment {
         return binding.getRoot();
     }
 
+    /**
+     * Initializes date header, weekly calendar, medication list, and observers.
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -89,11 +98,17 @@ public class HomeFragment extends Fragment {
         viewModel.loadMedications();
     }
 
+    /**
+     * Displays the current month/year header for the selected calendar date.
+     */
     private void setupHeader() {
         updateDateDisplay();
         updateThemeToggleState();
     }
 
+    /**
+     * Updates all date labels when the user changes day or week.
+     */
     private void updateDateDisplay() {
         Calendar today = Calendar.getInstance();
         boolean isToday = isSameDay(selectedCalendar, today);
@@ -127,6 +142,9 @@ public class HomeFragment extends Fragment {
     }
 
     // ─── Week Calendar (dynamic) ───────────────────────────────────────
+    /**
+     * Enables week swipe gestures and prepares the horizontal day selector.
+     */
     private void setupWeekCalendar() {
         weekSwipeDetector = new GestureDetector(requireContext(),
                 new GestureDetector.SimpleOnGestureListener() {
@@ -170,6 +188,9 @@ public class HomeFragment extends Fragment {
         buildWeekView();
     }
 
+    /**
+     * Rebuilds the seven-day strip and highlights the selected/today dates.
+     */
     private void buildWeekView() {
         LinearLayout container = binding.weekSelector;
         container.removeAllViews();
@@ -252,6 +273,9 @@ public class HomeFragment extends Fragment {
         }
     }
 
+    /**
+     * Animates the week strip when the user swipes between weeks.
+     */
     private void animateWeekTransition(boolean swipeLeft) {
         LinearLayout container = binding.weekSelector;
         int width = container.getWidth();
@@ -281,12 +305,18 @@ public class HomeFragment extends Fragment {
         weekAnimator.start();
     }
 
+    /**
+     * Compares two calendar values by date only.
+     */
     private boolean isSameDay(Calendar c1, Calendar c2) {
         return c1.get(Calendar.YEAR) == c2.get(Calendar.YEAR)
                 && c1.get(Calendar.DAY_OF_YEAR) == c2.get(Calendar.DAY_OF_YEAR);
     }
 
     // ─── RecyclerView ──────────────────────────────────────────────────
+    /**
+     * Configures medication cards and routes take/AI actions to the correct ViewModels.
+     */
     private void setupRecyclerView() {
         adapter = new MedicationAdapter(
                 item -> viewModel.takeMedication(item),
@@ -310,6 +340,9 @@ public class HomeFragment extends Fragment {
     }
 
     // ─── Observers ─────────────────────────────────────────────────────
+    /**
+     * Observes medication, loading, error, and summary state from the ViewModel.
+     */
     private void setupObservers() {
         viewModel.getMedications().observe(getViewLifecycleOwner(), medications -> {
             if (medications != null) {
@@ -373,6 +406,9 @@ public class HomeFragment extends Fragment {
         });
     }
 
+    /**
+     * Calculates and displays taken, pending, and missed counts for the selected date.
+     */
     private void updateSummaryCard(java.util.List<my.utar.uccd3223.medimind.data.local.database.entities.MedicationScheduleItem> medications) {
         int taken = 0;
         int pending = 0;
@@ -391,6 +427,9 @@ public class HomeFragment extends Fragment {
         binding.textSummaryMissedValue.setText(String.valueOf(missed));
     }
 
+    /**
+     * Provides a short fade/slide animation when the home content changes.
+     */
     private void animateHomeContentChange(View target) {
         target.setAlpha(0f);
         target.setTranslationY(18f);
@@ -402,6 +441,9 @@ public class HomeFragment extends Fragment {
                 .start();
     }
 
+    /**
+     * Gives immediate visual feedback when date controls are tapped.
+     */
     private void pulseView(View view) {
         view.animate().cancel();
         view.setScaleX(0.98f);
@@ -415,6 +457,9 @@ public class HomeFragment extends Fragment {
     }
 
     // ─── Buttons ───────────────────────────────────────────────────────
+    /**
+     * Wires calendar navigation, add medication, settings, theme, and today shortcuts.
+     */
     private void setupButtons() {
         // Navigate to Manage Medications screen
         binding.btnAddMedication.setOnClickListener(v ->
@@ -453,6 +498,9 @@ public class HomeFragment extends Fragment {
         });
     }
 
+    /**
+     * Syncs the theme toggle icon with the currently stored theme.
+     */
     private void updateThemeToggleState() {
         boolean darkMode = ThemeManager.isDarkMode(requireContext());
         binding.btnThemeToggle.setImageResource(
@@ -463,6 +511,9 @@ public class HomeFragment extends Fragment {
         );
     }
 
+    /**
+     * Refreshes dates and medications when returning to the home tab.
+     */
     @Override
     public void onResume() {
         super.onResume();
@@ -479,6 +530,9 @@ public class HomeFragment extends Fragment {
         viewModel.loadMedications();
     }
 
+    /**
+     * Clears binding references when the home view is destroyed.
+     */
     @Override
     public void onDestroyView() {
         super.onDestroyView();

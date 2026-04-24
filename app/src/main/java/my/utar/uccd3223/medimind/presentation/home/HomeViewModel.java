@@ -20,6 +20,9 @@ import my.utar.uccd3223.medimind.data.local.database.entities.Schedule;
 import my.utar.uccd3223.medimind.data.repository.MedicationRepositoryImpl;
 import my.utar.uccd3223.medimind.domain.repository.MedicationRepository;
 
+/**
+ * Loads home schedule data and coordinates dose status updates.
+ */
 @HiltViewModel
 public class HomeViewModel extends ViewModel {
 
@@ -40,6 +43,9 @@ public class HomeViewModel extends ViewModel {
     private final MutableLiveData<String> notificationText = new MutableLiveData<>();
 
     @Inject
+    /**
+     * Receives repository and executor dependencies used to load and update home data.
+     */
     public HomeViewModel(MedicationRepository repository, Executor executor) {
         this.repository = repository;
         this.executor = executor;
@@ -76,6 +82,9 @@ public class HomeViewModel extends ViewModel {
      * @param month 0-based month (Calendar.MONTH)
      * @param day   day of month
      */
+    /**
+     * Updates the selected calendar date and reloads that day's schedule.
+     */
     public void setDate(int year, int month, int day) {
         Calendar cal = Calendar.getInstance();
         cal.set(year, month, day);
@@ -95,6 +104,9 @@ public class HomeViewModel extends ViewModel {
     /**
      * Load (or reload) medications for the currently selected date.
      * Safe to call from any thread - uses postValue for all LiveData updates.
+     */
+    /**
+     * Loads medications scheduled for the selected date and publishes summary text.
      */
     public void loadMedications() {
         String dateStr = selectedDate.getValue();
@@ -136,6 +148,9 @@ public class HomeViewModel extends ViewModel {
     /**
      * Record that the user took a specific medication dose.
      */
+    /**
+     * Records a scheduled medication as taken and refreshes the selected day's list.
+     */
     public void takeMedication(MedicationScheduleItem item) {
         if (item.isTaken()) return; // Already taken
 
@@ -173,6 +188,9 @@ public class HomeViewModel extends ViewModel {
     /**
      * Add a new medication with schedule(s) and reminder(s).
      * Does NOT wrap in executor - the repo method already runs on background thread.
+     */
+    /**
+     * Creates a medication and schedule from the quick-add flow, then reloads home data.
      */
     public void addMedicationWithSchedule(String name, String dosage, String frequency,
                                            List<String> times, String startDate, String endDate,

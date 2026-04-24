@@ -22,6 +22,9 @@ import java.util.List;
 
 import my.utar.uccd3223.medimind.R;
 
+/**
+ * Binds friend request notifications and exposes accept, reject, and message actions.
+ */
 public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapter.ViewHolder> {
 
     private final List<FriendRequest> requests = new ArrayList<>();

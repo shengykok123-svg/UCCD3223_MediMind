@@ -4,6 +4,9 @@ import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
 @Entity(tableName = "health_records")
+/**
+ * Room entity for user health measurements and profile-related health data.
+ */
 public class HealthRecord {
 
     @PrimaryKey(autoGenerate = true)

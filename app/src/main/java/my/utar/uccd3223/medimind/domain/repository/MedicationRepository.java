@@ -5,6 +5,9 @@ import my.utar.uccd3223.medimind.data.local.database.entities.Medication;
 import my.utar.uccd3223.medimind.data.local.database.entities.MedicationScheduleItem;
 import java.util.List;
 
+/**
+ * Repository contract for medication, schedule, adherence, and report operations.
+ */
 public interface MedicationRepository {
     LiveData<List<Medication>> getActiveMedications(String today);
     Medication getMedicationById(long id);

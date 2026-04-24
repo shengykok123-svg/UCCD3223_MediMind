@@ -46,6 +46,9 @@ import dagger.hilt.android.AndroidEntryPoint;
 import my.utar.uccd3223.medimind.R;
 import my.utar.uccd3223.medimind.databinding.FragmentScanBinding;
 
+/**
+ * Captures medication images, displays scan results, and forwards extracted data.
+ */
 @AndroidEntryPoint
 public class ScanFragment extends Fragment {
 
@@ -58,6 +61,9 @@ public class ScanFragment extends Fragment {
     private ActivityResultLauncher<String> cameraPermissionLauncher;
     private ActivityResultLauncher<String> galleryLauncher;
 
+    /**
+     * Registers camera permission and gallery result handlers before the scan view is created.
+     */
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -91,6 +97,9 @@ public class ScanFragment extends Fragment {
         );
     }
 
+    /**
+     * Inflates the CameraX scan screen layout.
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -99,6 +108,9 @@ public class ScanFragment extends Fragment {
         return binding.getRoot();
     }
 
+    /**
+     * Connects the shared scan ViewModel, prepares controls/observers, and starts camera access.
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -110,6 +122,9 @@ public class ScanFragment extends Fragment {
         checkCameraPermission();
     }
 
+    /**
+     * Starts the camera immediately when permission exists, otherwise requests it.
+     */
     private void checkCameraPermission() {
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
                 == PackageManager.PERMISSION_GRANTED) {
@@ -119,6 +134,9 @@ public class ScanFragment extends Fragment {
         }
     }
 
+    /**
+     * Binds CameraX preview and image capture use cases to the fragment lifecycle.
+     */
     private void startCamera() {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture =
                 ProcessCameraProvider.getInstance(requireContext());
@@ -149,6 +167,9 @@ public class ScanFragment extends Fragment {
         }, ContextCompat.getMainExecutor(requireContext()));
     }
 
+    /**
+     * Wires capture, gallery, flashlight, retake, add-schedule, and ask-AI controls.
+     */
     private void setupControls() {
         // Back button
         binding.btnBack.setOnClickListener(v ->
@@ -231,13 +252,17 @@ public class ScanFragment extends Fragment {
                         + "Based on the available text details, explain the likely uses, common side effects, "
                         + "and important interactions. If the medication name is not identified, ask the user "
                         + "to provide the medication name instead of analyzing an image.";
-                viewModel.setPendingAiQuery(query);
+                String displayText = "Explain this scanned medication: " + medName;
+                viewModel.setPendingAiQuery(query, displayText);
                 BottomNavigationView bottomNav = requireActivity().findViewById(R.id.bottom_navigation);
                 bottomNav.setSelectedItemId(R.id.aiAssistantFragment);
             }
         });
     }
 
+    /**
+     * Observes scan result, loading, error, and flashlight state to keep the UI in sync.
+     */
     private void setupObservers() {
         // Scan result observer
         viewModel.getScanResult().observe(getViewLifecycleOwner(), result -> {
@@ -302,6 +327,9 @@ public class ScanFragment extends Fragment {
         });
     }
 
+    /**
+     * Enables or dims camera controls while analysis/result overlays are active.
+     */
     private void setCameraControlsEnabled(boolean enabled) {
         binding.btnCapture.setEnabled(enabled);
         binding.btnCapture.setAlpha(enabled ? 1.0f : 0.5f);
@@ -311,6 +339,9 @@ public class ScanFragment extends Fragment {
         binding.btnFlashlight.setAlpha(enabled ? 1.0f : 0.5f);
     }
 
+    /**
+     * Converts the CameraX captured image into a correctly rotated bitmap.
+     */
     private Bitmap imageProxyToBitmap(ImageProxy imageProxy) {
         ByteBuffer buffer = imageProxy.getPlanes()[0].getBuffer();
         byte[] bytes = new byte[buffer.remaining()];
@@ -329,6 +360,9 @@ public class ScanFragment extends Fragment {
         return bitmap;
     }
 
+    /**
+     * Loads a gallery image URI as a mutable bitmap for Gemini image extraction.
+     */
     private Bitmap uriToBitmap(Uri uri) {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -348,6 +382,9 @@ public class ScanFragment extends Fragment {
         }
     }
 
+    /**
+     * Persists the captured medication image so the Add Medication form can reuse it.
+     */
     private String saveBitmapToInternalStorage(Bitmap bitmap) {
         try {
             File dir = new File(requireContext().getFilesDir(), "medication_images");
@@ -366,10 +403,16 @@ public class ScanFragment extends Fragment {
         }
     }
 
+    /**
+     * Returns a display fallback when scan extraction produces a null or blank field.
+     */
     private String valueOrFallback(String value, String fallback) {
         return (value == null || value.trim().isEmpty()) ? fallback : value;
     }
 
+    /**
+     * Releases binding references when the scan view is destroyed.
+     */
     @Override
     public void onDestroyView() {
         super.onDestroyView();

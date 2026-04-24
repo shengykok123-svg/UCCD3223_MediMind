@@ -18,6 +18,9 @@ import my.utar.uccd3223.medimind.data.local.database.entities.MedicationSchedule
 import my.utar.uccd3223.medimind.databinding.ItemMedicationBinding;
 import my.utar.uccd3223.medimind.util.MedicationImageUtils;
 
+/**
+ * Binds home medication schedule cards and exposes take/AI-info actions.
+ */
 public class MedicationAdapter extends ListAdapter<MedicationScheduleItem, MedicationAdapter.ViewHolder> {
 
     private final OnTakeClickListener takeListener;

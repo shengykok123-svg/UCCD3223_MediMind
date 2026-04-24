@@ -21,6 +21,9 @@ import java.util.List;
 
 import my.utar.uccd3223.medimind.R;
 
+/**
+ * Renders community member cards and the add-member entry card.
+ */
 public class CommunityMemberAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private static final int VIEW_TYPE_MEMBER = 0;

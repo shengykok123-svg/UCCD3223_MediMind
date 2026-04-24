@@ -1,5 +1,8 @@
 package my.utar.uccd3223.medimind.presentation.community;
 
+/**
+ * UI model for a community member and their current adherence summary.
+ */
 public class CommunityMember {
     private String uid;
     private String name;

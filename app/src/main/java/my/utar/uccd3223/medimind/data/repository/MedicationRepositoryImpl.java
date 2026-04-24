@@ -39,6 +39,9 @@ import my.utar.uccd3223.medimind.domain.repository.MedicationRepository;
 import my.utar.uccd3223.medimind.util.DateTimeUtils;
 import my.utar.uccd3223.medimind.util.ReminderScheduler;
 
+/**
+ * Coordinates local Room data and remote Firestore sync for medication workflows.
+ */
 public class MedicationRepositoryImpl implements MedicationRepository {
 
     private static final String TAG = "MedicationRepo";

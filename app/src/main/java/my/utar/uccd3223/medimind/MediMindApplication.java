@@ -7,6 +7,9 @@ import android.os.Build;
 import dagger.hilt.android.HiltAndroidApp;
 import my.utar.uccd3223.medimind.util.ThemeManager;
 
+/**
+ * Initializes app-wide theme state and notification channels.
+ */
 @HiltAndroidApp
 public class MediMindApplication extends Application {
 

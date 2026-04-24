@@ -71,6 +71,9 @@ import my.utar.uccd3223.medimind.data.repository.MedicationRepositoryImpl;
 import my.utar.uccd3223.medimind.databinding.FragmentReportBinding;
 import my.utar.uccd3223.medimind.domain.repository.MedicationRepository;
 
+/**
+ * Displays adherence summaries, charts, filters, and report export actions.
+ */
 @AndroidEntryPoint
 public class ReportFragment extends Fragment {
 

@@ -120,8 +120,11 @@
 
     <!-- Friend Requests / Notifications -->
     <string name="community_notifications">Community Notifications</string>
+    <string name="clear_notifications">Clear</string>
+    <string name="notification_history_cleared">Cleared notification history</string>
+    <string name="no_notification_history_to_clear">No viewed or responded notifications to clear</string>
     <string name="message_from_format">Message from %1$s</string>
-    <string name="check_message">Check Message</string>
+    <string name="check_message">Check request message</string>
     <string name="accept">Accept</string>
     <string name="ignore">Ignore</string>
     <string name="reject">Reject</string>

@@ -6,6 +6,9 @@ import androidx.room.PrimaryKey;
 
 @Entity(tableName = "adherence_logs",
     indices = {@Index(value = {"medicationId", "scheduleId", "scheduledDateTime"}, unique = true)})
+/**
+ * Room entity recording whether a scheduled dose was taken, missed, or pending.
+ */
 public class AdherenceLog {
 
     @PrimaryKey(autoGenerate = true)

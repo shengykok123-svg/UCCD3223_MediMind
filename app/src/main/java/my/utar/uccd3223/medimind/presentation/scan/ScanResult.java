@@ -2,6 +2,9 @@ package my.utar.uccd3223.medimind.presentation.scan;
 
 import android.graphics.Bitmap;
 
+/**
+ * Holds extracted medication fields and the captured image used by scan workflows.
+ */
 public class ScanResult {
     private final String medicationName;
     private final String dosage;

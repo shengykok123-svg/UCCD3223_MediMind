@@ -6,6 +6,9 @@ import android.widget.ImageView;
 
 import my.utar.uccd3223.medimind.R;
 
+/**
+ * Loads medication images and falls back to the default medication icon when needed.
+ */
 public final class MedicationImageUtils {
 
     private MedicationImageUtils() {}

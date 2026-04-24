@@ -4,6 +4,9 @@ import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
 @Entity(tableName = "medications")
+/**
+ * Room entity storing the base medication profile and optional image/notes.
+ */
 public class Medication {
 
     @PrimaryKey(autoGenerate = true)

@@ -1,5 +1,8 @@
 package my.utar.uccd3223.medimind.util;
 
+/**
+ * Stores shared constants used by notifications, reminders, and intent actions.
+ */
 public class Constants {
     public static final String DATABASE_NAME = "medimind_database";
     public static final String CHANNEL_ID = "medication_reminders";

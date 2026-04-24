@@ -38,6 +38,9 @@ import my.utar.uccd3223.medimind.R;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
+/**
+ * Handles account creation, profile defaults, and Google registration.
+ */
 @AndroidEntryPoint
 public class RegisterActivity extends AppCompatActivity {
 

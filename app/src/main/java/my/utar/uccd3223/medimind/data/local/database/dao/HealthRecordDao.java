@@ -8,6 +8,9 @@ import java.util.List;
 import my.utar.uccd3223.medimind.data.local.database.entities.HealthRecord;
 
 @Dao
+/**
+ * DAO for storing and reading user health records.
+ */
 public interface HealthRecordDao {
 
     @Query("SELECT * FROM health_records ORDER BY timestamp DESC")

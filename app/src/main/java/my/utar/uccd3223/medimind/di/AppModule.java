@@ -13,6 +13,9 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import javax.inject.Singleton;
 
+/**
+ * Provides singleton app dependencies for Room, DAOs, Firestore, and background executors.
+ */
 @Module
 @InstallIn(SingletonComponent.class)
 public class AppModule {

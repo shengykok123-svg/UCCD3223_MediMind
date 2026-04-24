@@ -62,6 +62,9 @@ import javax.inject.Inject;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
+/**
+ * Displays and updates user profile, health fields, theme, and account actions.
+ */
 @AndroidEntryPoint
 public class SettingsFragment extends Fragment {
 

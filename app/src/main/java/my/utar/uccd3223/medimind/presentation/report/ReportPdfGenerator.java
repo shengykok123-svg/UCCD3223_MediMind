@@ -16,6 +16,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Builds a shareable PDF report from adherence summaries and selected filters.
+ */
 public class ReportPdfGenerator {
 
     private static final int PAGE_WIDTH = 595;  // A4 in points

@@ -9,6 +9,9 @@ import my.utar.uccd3223.medimind.data.local.database.entities.MedicationSchedule
 import my.utar.uccd3223.medimind.data.local.database.entities.Schedule;
 
 @Dao
+/**
+ * DAO for medication schedule queries and reminder status updates.
+ */
 public interface ScheduleDao {
 
     @Query("SELECT * FROM schedules WHERE medicationId = :medicationId")

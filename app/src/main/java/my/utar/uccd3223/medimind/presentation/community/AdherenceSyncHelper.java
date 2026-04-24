@@ -10,6 +10,9 @@ import my.utar.uccd3223.medimind.domain.repository.MedicationRepository;
  * Simplified helper: delegates to MedicationRepository which now auto-updates
  * the Firestore daily_adherence summary on every getMedicationSchedulesForDate() call.
  */
+/**
+ * Syncs local adherence data to Firestore so community members can view summaries.
+ */
 public class AdherenceSyncHelper {
 
     private final MedicationRepository repository;

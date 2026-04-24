@@ -20,6 +20,9 @@ import my.utar.uccd3223.medimind.databinding.ActivityMainBinding;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
+/**
+ * Hosts the main navigation graph, bottom navigation, and runtime notification permission flow.
+ */
 @AndroidEntryPoint
 public class MainActivity extends AppCompatActivity {
 

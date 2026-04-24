@@ -5,6 +5,9 @@ import android.graphics.Bitmap;
 import java.util.Objects;
 import java.util.UUID;
 
+/**
+ * Immutable chat item model for user, AI, loading, and optional image messages.
+ */
 public class ChatMessage {
 
     public static final int TYPE_USER = 0;

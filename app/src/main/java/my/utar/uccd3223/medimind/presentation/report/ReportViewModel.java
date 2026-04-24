@@ -32,6 +32,9 @@ import my.utar.uccd3223.medimind.data.local.database.entities.AdherenceLog;
 import my.utar.uccd3223.medimind.data.local.database.entities.Medication;
 import my.utar.uccd3223.medimind.data.local.database.entities.Schedule;
 
+/**
+ * Aggregates adherence statistics and medication data for report charts and export.
+ */
 @HiltViewModel
 public class ReportViewModel extends ViewModel {
 

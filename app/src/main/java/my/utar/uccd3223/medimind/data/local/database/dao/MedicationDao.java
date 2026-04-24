@@ -8,6 +8,9 @@ import java.util.List;
 import my.utar.uccd3223.medimind.data.local.database.entities.Medication;
 
 @Dao
+/**
+ * DAO for creating, updating, deleting, and querying medication records.
+ */
 public interface MedicationDao {
 
     @Query("SELECT * FROM medications WHERE isDeleted = 0 AND (endDate IS NULL OR endDate >= :today) ORDER BY name ASC")

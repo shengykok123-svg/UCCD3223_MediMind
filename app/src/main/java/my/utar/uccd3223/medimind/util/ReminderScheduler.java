@@ -21,12 +21,18 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * Schedules and cancels Android alarm reminders for each medication schedule.
+ */
 public class ReminderScheduler {
 
     private static final String TAG = "ReminderScheduler";
     private final Context context;
     private final AlarmManager alarmManager;
 
+    /**
+     * Stores the application context and AlarmManager used for reminder scheduling.
+     */
     public ReminderScheduler(Context context) {
         this.context = context;
         this.alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
@@ -34,6 +40,9 @@ public class ReminderScheduler {
 
     /**
      * Schedule reminder for a medication based on its schedule
+     */
+    /**
+     * Parses a schedule time and delegates creation of future alarms.
      */
     public void scheduleReminder(Medication medication, Schedule schedule) {
         if (!schedule.isActive()) {
@@ -50,6 +59,9 @@ public class ReminderScheduler {
 
     /**
      * Schedule reminders for today + next 6 days
+     */
+    /**
+     * Expands the selected days of week into individual alarm occurrences.
      */
     private void scheduleWeeklyReminders(Medication medication, Schedule schedule, LocalTime time) {
         String daysOfWeek = schedule.getDaysOfWeek();
@@ -81,6 +93,9 @@ public class ReminderScheduler {
 
     /**
      * Schedule an exact alarm for a specific reminder time
+     */
+    /**
+     * Creates the exact AlarmManager entry and embeds medication/schedule details in the Intent.
      */
     private void scheduleAlarm(Medication medication, Schedule schedule, LocalDateTime reminderDateTime) {
         long triggerAtMillis = reminderDateTime.atZone(ZoneId.systemDefault())
@@ -135,6 +150,9 @@ public class ReminderScheduler {
     /**
      * Cancel all reminders for a medication by cancelling alarms for all possible schedules/dates
      */
+    /**
+     * Cancels all generated alarms for a medication across possible schedule/day combinations.
+     */
     public void cancelReminders(long medicationId) {
         // Cancel alarms for today + next 6 days for reasonable schedule IDs
         // Since we can't enumerate all, cancel the known PendingIntents
@@ -159,6 +177,9 @@ public class ReminderScheduler {
 
     /**
      * Cancel specific reminder
+     */
+    /**
+     * Cancels alarms for one medication schedule while leaving other schedules intact.
      */
     public void cancelReminder(long medicationId, long scheduleId) {
         Intent intent = new Intent(context, AlarmReceiver.class);

@@ -26,6 +26,9 @@ import javax.inject.Inject;
 import dagger.hilt.android.lifecycle.HiltViewModel;
 import my.utar.uccd3223.medimind.BuildConfig;
 
+/**
+ * Manages Gemini chat sessions, model fallback, text/image prompts, and chat state.
+ */
 @HiltViewModel
 public class AiAssistantViewModel extends ViewModel {
 
@@ -46,6 +49,10 @@ public class AiAssistantViewModel extends ViewModel {
     private final MutableLiveData<Bitmap> pendingImage = new MutableLiveData<>();
     private String pendingQuery;
 
+    /**
+     * Builds the Gemini clients, configures the assistant's medical safety instructions,
+     * and prepares one chat session per fallback model.
+     */
     @Inject
     public AiAssistantViewModel(Executor executor) {
         this.executor = executor;
@@ -110,16 +117,33 @@ public class AiAssistantViewModel extends ViewModel {
         pendingQuery = query != null ? query.trim() : null;
     }
 
+    /**
+     * Returns a queued prompt from another screen and clears it so it is sent only once.
+     */
     public String consumePendingQuery() {
         String query = pendingQuery;
         pendingQuery = null;
         return query;
     }
 
+    /**
+     * Sends a normal visible user message; the same text is used for display and Gemini.
+     */
     public void sendMessage(String text) {
+        sendMessage(text, text);
+    }
+
+    /**
+     * Sends text to Gemini while allowing the UI to show a shorter display message.
+     * This is used for scan handoff prompts where the hidden prompt contains detailed context.
+     */
+    public void sendMessage(String text, String displayText) {
         if (text == null || text.trim().isEmpty()) return;
 
         String trimmed = text.trim();
+        String display = (displayText == null || displayText.trim().isEmpty())
+                ? trimmed
+                : displayText.trim();
         Bitmap image = pendingImage.getValue();
 
         if (image != null) {
@@ -129,7 +153,7 @@ public class AiAssistantViewModel extends ViewModel {
         }
 
         // Add user message
-        addMessage(new ChatMessage(trimmed, ChatMessage.TYPE_USER));
+        addMessage(new ChatMessage(display, ChatMessage.TYPE_USER));
 
         // Add loading indicator
         ChatMessage loadingMsg = new ChatMessage("Thinking...", ChatMessage.TYPE_LOADING);
@@ -145,6 +169,10 @@ public class AiAssistantViewModel extends ViewModel {
         sendChatMessageWithFallback(content, loadingMsg, 0);
     }
 
+    /**
+     * Sends a chat message through the current fallback model.
+     * If the request fails, the same content is retried with the next configured model.
+     */
     private void sendChatMessageWithFallback(Content content, ChatMessage loadingMsg, int modelIndex) {
         ListenableFuture<GenerateContentResponse> future = chatSessions.get(modelIndex).sendMessage(content);
         Futures.addCallback(future, new FutureCallback<GenerateContentResponse>() {
@@ -179,6 +207,11 @@ public class AiAssistantViewModel extends ViewModel {
         }, executor);
     }
 
+    /**
+     * Sends a multimodal prompt containing the user's text and selected image.
+     * The chat history API is bypassed here because image content is handled more reliably
+     * through generateContent.
+     */
     public void sendMessageWithImage(String text, Bitmap image) {
         String messageText = (text == null || text.trim().isEmpty()) ? "What can you tell me about this image?" : text.trim();
 
@@ -201,6 +234,10 @@ public class AiAssistantViewModel extends ViewModel {
         generateImageResponseWithFallback(content, loadingMsg, 0);
     }
 
+    /**
+     * Runs image analysis with model fallback, preserving a single loading bubble until
+     * one model succeeds or all models fail.
+     */
     private void generateImageResponseWithFallback(Content content, ChatMessage loadingMsg, int modelIndex) {
         ListenableFuture<GenerateContentResponse> future = models.get(modelIndex).generateContent(content);
         Futures.addCallback(future, new FutureCallback<GenerateContentResponse>() {
@@ -235,6 +272,9 @@ public class AiAssistantViewModel extends ViewModel {
         }, executor);
     }
 
+    /**
+     * Creates a Gemini client for one model name using the shared API key and system prompt.
+     */
     private GenerativeModel createGenerativeModel(String modelName, Content systemInstruction) {
         return new GenerativeModel(
                 modelName,
@@ -248,16 +288,25 @@ public class AiAssistantViewModel extends ViewModel {
         );
     }
 
+    /**
+     * Adds a chat item and publishes a copy so observers receive an immutable snapshot.
+     */
     private synchronized void addMessage(ChatMessage message) {
         messageList.add(message);
         messages.postValue(new ArrayList<>(messageList));
     }
 
+    /**
+     * Removes a temporary chat item, usually the loading message after a response arrives.
+     */
     private synchronized void removeMessage(ChatMessage message) {
         messageList.remove(message);
         messages.postValue(new ArrayList<>(messageList));
     }
 
+    /**
+     * Clears the current conversation UI and inserts a short restart message.
+     */
     public synchronized void clearChat() {
         messageList.clear();
         addMessage(new ChatMessage(

@@ -5,6 +5,9 @@ import android.content.SharedPreferences;
 
 import androidx.appcompat.app.AppCompatDelegate;
 
+/**
+ * Persists and applies the selected light or dark app theme.
+ */
 public final class ThemeManager {
 
     private static final String PREFS_NAME = "medimind_theme_prefs";

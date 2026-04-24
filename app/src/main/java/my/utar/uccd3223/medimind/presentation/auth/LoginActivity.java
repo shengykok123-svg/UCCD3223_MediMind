@@ -36,6 +36,9 @@ import my.utar.uccd3223.medimind.domain.repository.MedicationRepository;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
+/**
+ * Handles user sign-in with email/password and Google authentication.
+ */
 @AndroidEntryPoint
 public class LoginActivity extends AppCompatActivity {
 

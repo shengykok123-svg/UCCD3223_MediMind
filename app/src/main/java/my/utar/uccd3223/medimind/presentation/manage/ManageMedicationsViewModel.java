@@ -17,6 +17,9 @@ import my.utar.uccd3223.medimind.data.local.database.entities.Schedule;
 import my.utar.uccd3223.medimind.data.repository.MedicationRepositoryImpl;
 import my.utar.uccd3223.medimind.domain.repository.MedicationRepository;
 
+/**
+ * Coordinates medication CRUD operations and schedule persistence for the manage screen.
+ */
 @HiltViewModel
 public class ManageMedicationsViewModel extends ViewModel {
 

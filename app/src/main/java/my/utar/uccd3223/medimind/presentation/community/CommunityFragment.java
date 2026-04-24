@@ -36,6 +36,9 @@ import my.utar.uccd3223.medimind.R;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
+/**
+ * Displays community members, friend requests, notifications, and member detail dialogs.
+ */
 @AndroidEntryPoint
 public class CommunityFragment extends Fragment {
 
@@ -48,6 +51,9 @@ public class CommunityFragment extends Fragment {
     private TextView textFriendsCount;
     private RecyclerView recyclerMembers;
 
+    /**
+     * Inflates the community screen that displays shared members and the add-member card.
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -55,6 +61,9 @@ public class CommunityFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_community, container, false);
     }
 
+    /**
+     * Connects the activity-scoped ViewModel, initializes controls, and observes community data.
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -159,6 +168,9 @@ public class CommunityFragment extends Fragment {
 
     // ─── Add Member Dialog ───────────────────────────────────────
 
+    /**
+     * Shows the dialog for entering another user's shareable ID and optional request message.
+     */
     private void showAddMemberDialog() {
         Dialog dialog = new Dialog(requireContext());
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -196,6 +208,9 @@ public class CommunityFragment extends Fragment {
 
     // ─── Notifications Dialog ────────────────────────────────────
 
+    /**
+     * Opens notification history, wires accept/reject/message actions, and marks notices viewed.
+     */
     private void showNotificationsDialog() {
         // Mark requests as read when opening
         viewModel.markRequestsRead();
@@ -205,6 +220,7 @@ public class CommunityFragment extends Fragment {
         dialog.setContentView(R.layout.dialog_friend_requests);
 
         ImageButton btnClose = dialog.findViewById(R.id.btn_close);
+        Button btnClearHistory = dialog.findViewById(R.id.btn_clear_history);
         RecyclerView recyclerNotifications = dialog.findViewById(R.id.recycler_notifications);
 
         NotificationAdapter notificationAdapter = new NotificationAdapter(new NotificationAdapter.OnRequestActionListener() {
@@ -234,6 +250,7 @@ public class CommunityFragment extends Fragment {
         viewModel.getPendingRequests().observe(getViewLifecycleOwner(), observer);
 
         btnClose.setOnClickListener(v -> dialog.dismiss());
+        btnClearHistory.setOnClickListener(v -> viewModel.clearNotificationHistory());
         dialog.setOnDismissListener(d -> viewModel.getPendingRequests().removeObserver(observer));
 
         dialog.show();
@@ -241,6 +258,9 @@ public class CommunityFragment extends Fragment {
 
     // ─── Message Dialog ──────────────────────────────────────────
 
+    /**
+     * Displays the optional text message attached to a friend request.
+     */
     private void showMessageDialog(FriendRequest request) {
         Dialog dialog = new Dialog(requireContext());
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -255,6 +275,7 @@ public class CommunityFragment extends Fragment {
 
         TextView textTitle = dialog.findViewById(R.id.text_title);
         TextView textMessage = dialog.findViewById(R.id.text_message);
+        ImageButton btnCloseIcon = dialog.findViewById(R.id.btn_close_icon);
         Button btnClose = dialog.findViewById(R.id.btn_close);
 
         String senderName = request.getFromName() != null
@@ -263,6 +284,7 @@ public class CommunityFragment extends Fragment {
         textTitle.setText(getString(R.string.message_from_format, senderName));
         textMessage.setText(request.getMessage());
 
+        btnCloseIcon.setOnClickListener(v -> dialog.dismiss());
         btnClose.setOnClickListener(v -> dialog.dismiss());
 
         dialog.show();
@@ -270,6 +292,9 @@ public class CommunityFragment extends Fragment {
 
     // ─── Member Detail Dialog ────────────────────────────────────
 
+    /**
+     * Shows a community member's adherence details, medications, nickname, and remove action.
+     */
     private void showMemberDetailDialog(CommunityMember member) {
         Dialog dialog = new Dialog(requireContext(), android.R.style.Theme_Material_Light_NoActionBar_Fullscreen);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);

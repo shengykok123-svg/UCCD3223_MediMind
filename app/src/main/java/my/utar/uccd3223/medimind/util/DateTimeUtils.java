@@ -3,6 +3,9 @@ package my.utar.uccd3223.medimind.util;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * Centralizes date and time formatting helpers used across medication schedules.
+ */
 public class DateTimeUtils {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER =

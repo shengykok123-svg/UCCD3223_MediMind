@@ -27,6 +27,9 @@ import javax.inject.Inject;
 import dagger.hilt.android.lifecycle.HiltViewModel;
 import my.utar.uccd3223.medimind.BuildConfig;
 
+/**
+ * Sends captured medication images to Gemini and sanitizes extracted form fields.
+ */
 @HiltViewModel
 public class ScanViewModel extends ViewModel {
 
@@ -44,7 +47,12 @@ public class ScanViewModel extends ViewModel {
     private final MutableLiveData<String> error = new MutableLiveData<>();
     private final MutableLiveData<Boolean> flashlightOn = new MutableLiveData<>(false);
     private String pendingAiQuery;
+    private String pendingAiDisplayText;
 
+    /**
+     * Builds the scan extraction prompt and prepares Gemini clients for each fallback model.
+     * The prompt forces JSON-only output so parsing stays predictable.
+     */
     @Inject
     public ScanViewModel(Executor executor) {
         this.executor = executor;
@@ -63,7 +71,8 @@ public class ScanViewModel extends ViewModel {
                 + "\"usage\":string|null}\n"
                 + "Field rules:\n"
                 + "- medicationName: short medicine/product name only.\n"
-                + "- dosage: short strength or dosage form only, e.g. \"500 mg\", \"1 tablet\", \"250 mg/5 mL\".\n"
+                + "- dosage: medicine strength or concentration only, e.g. \"500 mg\", \"10 mg\", \"250 mg/5 mL\", \"1%\".\n"
+                + "- dosage must NOT be package quantity/count. Values like \"30 tablets\", \"60 tablets\", \"100 capsules\", \"120 mL bottle\", or \"60 pcs\" are package size, not dosage; use null unless a real strength/concentration is visible.\n"
                 + "- frequencyDoses and frequencyDays: only when explicitly shown or clearly stated on the packaging.\n"
                 + "- mealInstructions: only one of \"Before Meal\", \"During Meal\", \"After Meal\", \"Before Sleep\", \"As Needed\" when clearly supported.\n"
                 + "- type: short category only, e.g. \"Tablet\", \"Capsule\", \"Syrup\".\n"
@@ -93,11 +102,18 @@ public class ScanViewModel extends ViewModel {
         return flashlightOn;
     }
 
+    /**
+     * Toggles flashlight state; the Fragment observes this value and applies it to CameraX.
+     */
     public void toggleFlashlight() {
         Boolean current = flashlightOn.getValue();
         flashlightOn.setValue(current != null && current ? false : true);
     }
 
+    /**
+     * Sends a captured or gallery medication image to Gemini for structured extraction.
+     * The original bitmap is kept in the result so it can be previewed and saved later.
+     */
     public void analyzeMedication(Bitmap bitmap) {
         isLoading.setValue(true);
         error.setValue(null);
@@ -112,6 +128,10 @@ public class ScanViewModel extends ViewModel {
         analyzeMedicationWithFallback(content, bitmap, 0);
     }
 
+    /**
+     * Attempts image extraction with the current model and recursively retries the next model
+     * if the API call fails.
+     */
     private void analyzeMedicationWithFallback(Content content, Bitmap bitmap, int modelIndex) {
         ListenableFuture<GenerateContentResponse> future = models.get(modelIndex).generateContent(content);
         Futures.addCallback(future, new FutureCallback<GenerateContentResponse>() {
@@ -145,6 +165,9 @@ public class ScanViewModel extends ViewModel {
         }, executor);
     }
 
+    /**
+     * Creates one Gemini model instance with the scan-specific system instruction.
+     */
     private GenerativeModel createGenerativeModel(String modelName, Content systemInstruction) {
         return new GenerativeModel(
                 modelName,
@@ -158,13 +181,17 @@ public class ScanViewModel extends ViewModel {
         );
     }
 
+    /**
+     * Parses Gemini's JSON response and sanitizes every field before exposing it to the UI.
+     * Invalid or unclear fields become null rather than unreliable prefill values.
+     */
     private ScanResult parseGeminiResponse(String response, Bitmap bitmap) {
         String cleaned = extractJsonObject(response);
 
         try {
             JSONObject json = new JSONObject(cleaned);
             String name = sanitizeShortText(json.opt("medicationName"), 80);
-            String dosage = sanitizeShortText(json.opt("dosage"), 60);
+            String dosage = sanitizeDosage(json.opt("dosage"));
             String frequencyDoses = sanitizePositiveIntegerString(json.opt("frequencyDoses"));
             String frequencyDays = sanitizePositiveIntegerString(json.opt("frequencyDays"));
             String mealInstructions = sanitizeMealInstruction(json.opt("mealInstructions"));
@@ -186,6 +213,9 @@ public class ScanViewModel extends ViewModel {
         }
     }
 
+    /**
+     * Extracts the first JSON object from a response and strips accidental Markdown fences.
+     */
     private String extractJsonObject(String response) {
         if (response == null) return "{}";
 
@@ -208,6 +238,10 @@ public class ScanViewModel extends ViewModel {
         return "{}";
     }
 
+    /**
+     * Normalizes text fields, rejects placeholder values such as "unknown",
+     * and caps the field length for form safety.
+     */
     private String sanitizeShortText(Object rawValue, int maxLength) {
         if (rawValue == null || rawValue == JSONObject.NULL) return null;
 
@@ -233,6 +267,33 @@ public class ScanViewModel extends ViewModel {
         return value.isEmpty() ? null : value;
     }
 
+    /**
+     * Keeps only logical strength/concentration values and rejects package quantities.
+     * Example: "500 mg" is valid, while "60 tablets" is treated as bottle count and removed.
+     */
+    private String sanitizeDosage(Object rawValue) {
+        String value = sanitizeShortText(rawValue, 60);
+        if (value == null) return null;
+
+        String normalized = value.toLowerCase();
+
+        if (normalized.matches("^\\d+\\s*(tablets?|tabs?|capsules?|caps?|pills?|softgels?|lozenges?|sachets?|pcs?|pieces?|count|ct)\\b.*")) {
+            return null;
+        }
+
+        if (normalized.matches("^\\d+\\s*(ml|m\\s*l|milliliters?)\\s*(bottle|pack|container)?$")) {
+            return null;
+        }
+
+        boolean hasStrengthUnit = normalized.matches(".*\\d+(\\.\\d+)?\\s*(mcg|µg|ug|mg|g|kg|iu|units?|mmol|meq|%)\\b.*")
+                || normalized.matches(".*\\d+(\\.\\d+)?\\s*(mg|mcg|µg|ug|g|iu|units?)\\s*/\\s*\\d+(\\.\\d+)?\\s*(ml|m\\s*l|l|tablet|tab|capsule|cap)\\b.*");
+
+        return hasStrengthUnit ? value : null;
+    }
+
+    /**
+     * Converts numeric JSON fields into positive integer strings for the form inputs.
+     */
     private String sanitizePositiveIntegerString(Object rawValue) {
         if (rawValue == null || rawValue == JSONObject.NULL) return null;
 
@@ -251,6 +312,9 @@ public class ScanViewModel extends ViewModel {
         }
     }
 
+    /**
+     * Maps free-text meal instructions to the fixed dropdown values used by the app.
+     */
     private String sanitizeMealInstruction(Object rawValue) {
         String value = sanitizeShortText(rawValue, 30);
         if (value == null) return null;
@@ -271,16 +335,43 @@ public class ScanViewModel extends ViewModel {
         }
     }
 
+    /**
+     * Stores a scan-generated AI query without a custom display label.
+     */
     public void setPendingAiQuery(String query) {
         this.pendingAiQuery = query;
+        this.pendingAiDisplayText = null;
     }
 
+    /**
+     * Stores a detailed hidden AI query plus a shorter message shown in the chat bubble.
+     */
+    public void setPendingAiQuery(String query, String displayText) {
+        this.pendingAiQuery = query;
+        this.pendingAiDisplayText = displayText;
+    }
+
+    /**
+     * Returns and clears the pending scan-to-chat prompt so it is sent once.
+     */
     public String consumePendingAiQuery() {
         String query = pendingAiQuery;
         pendingAiQuery = null;
         return query;
     }
 
+    /**
+     * Returns and clears the short display text paired with the hidden scan prompt.
+     */
+    public String consumePendingAiDisplayText() {
+        String displayText = pendingAiDisplayText;
+        pendingAiDisplayText = null;
+        return displayText;
+    }
+
+    /**
+     * Resets scan output and loading state so the user can retake or choose another image.
+     */
     public void clearResult() {
         scanResult.setValue(null);
         error.setValue(null);

@@ -14,6 +14,9 @@ import my.utar.uccd3223.medimind.MediMindApplication;
 import my.utar.uccd3223.medimind.R;
 import my.utar.uccd3223.medimind.receiver.MedicationActionReceiver;
 
+/**
+ * Builds medication reminder notifications with action buttons for the scheduled dose.
+ */
 public class MedicationReminderWorker extends Worker {
 
     public static final String KEY_MEDICATION_ID = "medication_id";
