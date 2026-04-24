@@ -216,11 +216,19 @@ public class ScanFragment extends Fragment {
         binding.btnAskAi.setOnClickListener(v -> {
             ScanResult result = viewModel.getScanResult().getValue();
             if (result != null) {
-                String medName = valueOrFallback(result.getMedicationName(), "this medication");
-                String dosage = valueOrFallback(result.getDosage(), "the visible dosage");
-                String query = "Tell me about " + medName
-                        + " (" + dosage + "). "
-                        + "What are its uses, side effects, and important interactions?";
+                String medName = valueOrFallback(result.getMedicationName(), "Medication name not identified");
+                String dosage = valueOrFallback(result.getDosage(), "Dosage not identified");
+                String type = valueOrFallback(result.getType(), "Type not identified");
+                String usage = valueOrFallback(result.getUsage(), "Usage not identified");
+                String query = "The following medication details were extracted from a prescription scan. "
+                        + "No image is attached, so use only this text information:\n"
+                        + "Medication name: " + medName + "\n"
+                        + "Dosage: " + dosage + "\n"
+                        + "Type: " + type + "\n"
+                        + "Usage: " + usage + "\n\n"
+                        + "Based on the available text details, explain the likely uses, common side effects, "
+                        + "and important interactions. If the medication name is not identified, ask the user "
+                        + "to provide the medication name instead of analyzing an image.";
                 viewModel.setPendingAiQuery(query);
                 BottomNavigationView bottomNav = requireActivity().findViewById(R.id.bottom_navigation);
                 bottomNav.setSelectedItemId(R.id.aiAssistantFragment);
