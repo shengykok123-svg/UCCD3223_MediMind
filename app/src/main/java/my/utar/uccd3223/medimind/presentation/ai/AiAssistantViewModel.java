@@ -17,7 +17,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -29,9 +29,15 @@ import my.utar.uccd3223.medimind.BuildConfig;
 @HiltViewModel
 public class AiAssistantViewModel extends ViewModel {
 
+    private static final List<String> MODEL_NAMES = Arrays.asList(
+            "gemini-2.5-flash-lite",
+            "gemini-2.0-flash",
+            "gemini-2.5-flash"
+    );
+
     private final Executor executor;
-    private final GenerativeModelFutures model;
-    private final ChatFutures chatSession;
+    private final List<GenerativeModelFutures> models = new ArrayList<>();
+    private final List<ChatFutures> chatSessions = new ArrayList<>();
 
     private final List<ChatMessage> messageList = new ArrayList<>();
     private final MutableLiveData<List<ChatMessage>> messages = new MutableLiveData<>(new ArrayList<>());
@@ -58,19 +64,11 @@ public class AiAssistantViewModel extends ViewModel {
                 + "relevant information about the medication shown.");
         Content systemInstruction = sysBuilder.build();
 
-        GenerativeModel gm = new GenerativeModel(
-                "gemini-2.5-flash",
-                BuildConfig.GEMINI_API_KEY,
-                null, // generationConfig
-                null, // safetySettings
-                new RequestOptions(), // requestOptions (non-nullable in Kotlin)
-                null, // tools
-                null, // toolConfig
-                systemInstruction
-        );
-
-        model = GenerativeModelFutures.from(gm);
-        chatSession = model.startChat();
+        for (String modelName : MODEL_NAMES) {
+            GenerativeModelFutures generativeModel = GenerativeModelFutures.from(createGenerativeModel(modelName, systemInstruction));
+            models.add(generativeModel);
+            chatSessions.add(generativeModel.startChat());
+        }
 
         // Add welcome message
         addMessage(new ChatMessage(
@@ -144,8 +142,11 @@ public class AiAssistantViewModel extends ViewModel {
         contentBuilder.addText(trimmed);
         Content content = contentBuilder.build();
 
-        ListenableFuture<GenerateContentResponse> future = chatSession.sendMessage(content);
+        sendChatMessageWithFallback(content, loadingMsg, 0);
+    }
 
+    private void sendChatMessageWithFallback(Content content, ChatMessage loadingMsg, int modelIndex) {
+        ListenableFuture<GenerateContentResponse> future = chatSessions.get(modelIndex).sendMessage(content);
         Futures.addCallback(future, new FutureCallback<GenerateContentResponse>() {
             @Override
             public void onSuccess(GenerateContentResponse result) {
@@ -161,6 +162,12 @@ public class AiAssistantViewModel extends ViewModel {
 
             @Override
             public void onFailure(Throwable t) {
+                int nextModelIndex = modelIndex + 1;
+                if (nextModelIndex < chatSessions.size()) {
+                    sendChatMessageWithFallback(content, loadingMsg, nextModelIndex);
+                    return;
+                }
+
                 removeMessage(loadingMsg);
                 String errorMsg = t.getMessage();
                 if (errorMsg == null || errorMsg.isEmpty()) {
@@ -191,8 +198,11 @@ public class AiAssistantViewModel extends ViewModel {
         Content content = contentBuilder.build();
 
         // Use generateContent for multimodal (chat history doesn't support images well)
-        ListenableFuture<GenerateContentResponse> future = model.generateContent(content);
+        generateImageResponseWithFallback(content, loadingMsg, 0);
+    }
 
+    private void generateImageResponseWithFallback(Content content, ChatMessage loadingMsg, int modelIndex) {
+        ListenableFuture<GenerateContentResponse> future = models.get(modelIndex).generateContent(content);
         Futures.addCallback(future, new FutureCallback<GenerateContentResponse>() {
             @Override
             public void onSuccess(GenerateContentResponse result) {
@@ -208,6 +218,12 @@ public class AiAssistantViewModel extends ViewModel {
 
             @Override
             public void onFailure(Throwable t) {
+                int nextModelIndex = modelIndex + 1;
+                if (nextModelIndex < models.size()) {
+                    generateImageResponseWithFallback(content, loadingMsg, nextModelIndex);
+                    return;
+                }
+
                 removeMessage(loadingMsg);
                 String errorMsg = t.getMessage();
                 if (errorMsg == null || errorMsg.isEmpty()) {
@@ -217,6 +233,19 @@ public class AiAssistantViewModel extends ViewModel {
                 isLoading.postValue(false);
             }
         }, executor);
+    }
+
+    private GenerativeModel createGenerativeModel(String modelName, Content systemInstruction) {
+        return new GenerativeModel(
+                modelName,
+                BuildConfig.GEMINI_API_KEY,
+                null, // generationConfig
+                null, // safetySettings
+                new RequestOptions(), // requestOptions (non-nullable in Kotlin)
+                null, // tools
+                null, // toolConfig
+                systemInstruction
+        );
     }
 
     private synchronized void addMessage(ChatMessage message) {

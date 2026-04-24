@@ -17,6 +17,9 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Executor;
 
 import javax.inject.Inject;
@@ -27,8 +30,14 @@ import my.utar.uccd3223.medimind.BuildConfig;
 @HiltViewModel
 public class ScanViewModel extends ViewModel {
 
+    private static final List<String> MODEL_NAMES = Arrays.asList(
+            "gemini-2.5-flash-lite",
+            "gemini-2.0-flash",
+            "gemini-2.5-flash"
+    );
+
     private final Executor executor;
-    private final GenerativeModelFutures model;
+    private final List<GenerativeModelFutures> models = new ArrayList<>();
 
     private final MutableLiveData<ScanResult> scanResult = new MutableLiveData<>();
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
@@ -63,18 +72,9 @@ public class ScanViewModel extends ViewModel {
                 + "- Do not output markdown, prose, explanations, placeholders, or values like \"Unknown\".");
         Content systemInstruction = sysBuilder.build();
 
-        GenerativeModel gm = new GenerativeModel(
-                "gemini-2.5-flash",
-                BuildConfig.GEMINI_API_KEY,
-                null,
-                null,
-                new RequestOptions(),
-                null,
-                null,
-                systemInstruction
-        );
-
-        model = GenerativeModelFutures.from(gm);
+        for (String modelName : MODEL_NAMES) {
+            models.add(GenerativeModelFutures.from(createGenerativeModel(modelName, systemInstruction)));
+        }
     }
 
     public LiveData<ScanResult> getScanResult() {
@@ -109,8 +109,11 @@ public class ScanViewModel extends ViewModel {
                 + "Use null for anything absent or unclear. Keep every returned value concise.");
         Content content = contentBuilder.build();
 
-        ListenableFuture<GenerateContentResponse> future = model.generateContent(content);
+        analyzeMedicationWithFallback(content, bitmap, 0);
+    }
 
+    private void analyzeMedicationWithFallback(Content content, Bitmap bitmap, int modelIndex) {
+        ListenableFuture<GenerateContentResponse> future = models.get(modelIndex).generateContent(content);
         Futures.addCallback(future, new FutureCallback<GenerateContentResponse>() {
             @Override
             public void onSuccess(GenerateContentResponse result) {
@@ -126,6 +129,12 @@ public class ScanViewModel extends ViewModel {
 
             @Override
             public void onFailure(Throwable t) {
+                int nextModelIndex = modelIndex + 1;
+                if (nextModelIndex < models.size()) {
+                    analyzeMedicationWithFallback(content, bitmap, nextModelIndex);
+                    return;
+                }
+
                 String errorMsg = t.getMessage();
                 if (errorMsg == null || errorMsg.isEmpty()) {
                     errorMsg = "An unexpected error occurred";
@@ -134,6 +143,19 @@ public class ScanViewModel extends ViewModel {
                 isLoading.postValue(false);
             }
         }, executor);
+    }
+
+    private GenerativeModel createGenerativeModel(String modelName, Content systemInstruction) {
+        return new GenerativeModel(
+                modelName,
+                BuildConfig.GEMINI_API_KEY,
+                null,
+                null,
+                new RequestOptions(),
+                null,
+                null,
+                systemInstruction
+        );
     }
 
     private ScanResult parseGeminiResponse(String response, Bitmap bitmap) {
