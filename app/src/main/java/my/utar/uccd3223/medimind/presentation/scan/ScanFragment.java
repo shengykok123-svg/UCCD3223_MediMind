@@ -31,6 +31,8 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -247,7 +249,18 @@ public class ScanFragment extends Fragment {
                 binding.textMedType.setText(valueOrFallback(result.getType(), "Type not clearly visible"));
                 binding.textMedUsage.setText(valueOrFallback(result.getUsage(), "Only clearly visible fields will prefill the form"));
                 if (result.getCapturedImage() != null) {
-                    binding.imgScannedMed.setImageBitmap(result.getCapturedImage());
+                    binding.imgScannedMed.setVisibility(View.VISIBLE);
+                    binding.imgScannedMed.setPadding(0, 0, 0, 0);
+                    Glide.with(this)
+                            .load(result.getCapturedImage())
+                            .diskCacheStrategy(DiskCacheStrategy.NONE)
+                            .skipMemoryCache(true)
+                            .placeholder(R.drawable.ic_medication)
+                            .error(R.drawable.ic_medication)
+                            .into(binding.imgScannedMed);
+                } else {
+                    Glide.with(this).clear(binding.imgScannedMed);
+                    binding.imgScannedMed.setImageResource(R.drawable.ic_medication);
                 }
                 boolean canPrefill = result.hasMeaningfulPrefillData();
                 binding.btnAddSchedule.setEnabled(canPrefill);
